@@ -308,9 +308,14 @@ public partial class MainWindow
         }
 
         var today = DateTime.Today;
+        var toDate = today;
         DateTime fromDate;
         switch (period)
         {
+            case "Yesterday":
+                fromDate = today.AddDays(-1);
+                toDate = today.AddDays(-1);
+                break;
             case "ThisWeek":
                 var daysSinceMonday = ((int)today.DayOfWeek + 6) % 7;
                 fromDate = today.AddDays(-daysSinceMonday);
@@ -352,7 +357,7 @@ public partial class MainWindow
         try
         {
             FromDatePicker.SelectedDate = fromDate;
-            ToDatePicker.SelectedDate = today;
+            ToDatePicker.SelectedDate = toDate;
         }
         finally
         {

@@ -185,7 +185,7 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
 
         if (!_settings.IsConfigured)
         {
-            throw new InvalidOperationException("请先使用 Google 登录。");
+            throw new InvalidOperationException("请先 Google 登录。");
         }
 
         var refreshToken = FirebaseSyncSettingsStore.UnprotectRefreshToken(
