@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\SoftTrace.Core\SoftTrace.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>SoftTrace</AssemblyName>
+    <Version>0.2.0</Version>
+    <Product>SoftTrace</Product>
+    <Description>轻量级 Windows 软件使用时间追踪工具</Description>
+    <ApplicationIcon>Assets\SoftTrace.ico</ApplicationIcon>
+  </PropertyGroup>
+
+</Project>

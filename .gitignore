@@ -1,0 +1,14 @@
+.tools/
+.vs/
+.idea/
+bin/
+obj/
+dist/
+TestResults/
+*.user
+*.suo
+*.db
+*.db-shm
+*.db-wal
+firebase-oauth-secret.txt
+firebase-oauth-client.json
