@@ -10,6 +10,8 @@ namespace SoftTrace.App;
 public partial class App
 {
     private Mutex? _singleInstanceMutex;
+    private EventWaitHandle? _showWindowHandle;
+    private RegisteredWaitHandle? _registeredWaitHandle;
     private Forms.NotifyIcon? _trayIcon;
     private Icon? _trayIconImage;
     private ActivityCaptureService? _capture;
@@ -27,17 +29,33 @@ public partial class App
         _singleInstanceMutex = new Mutex(true, "SoftTrace.SingleInstance", out var createdNew);
         if (!createdNew)
         {
-            MessageBox.Show("SoftTrace 已经在运行。", "SoftTrace", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                using var showEvent = EventWaitHandle.OpenExisting("SoftTrace.ShowWindowEvent");
+                showEvent.Set();
+            }
+            catch
+            {
+            }
             Shutdown();
             return;
         }
 
         try
         {
+            _showWindowHandle = new EventWaitHandle(false, EventResetMode.AutoReset, "SoftTrace.ShowWindowEvent");
+            _registeredWaitHandle = ThreadPool.RegisterWaitForSingleObject(
+                _showWindowHandle,
+                (_, _) => Dispatcher.BeginInvoke(ShowMainWindow),
+                null,
+                -1,
+                false);
+
             var dataDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "SoftTrace");
             Directory.CreateDirectory(dataDirectory);
+            MigrateLegacyData(dataDirectory);
             _logPath = Path.Combine(dataDirectory, "softtrace.log");
             Log("Starting SoftTrace.");
             var store = new ActivityStore(Path.Combine(dataDirectory, "softtrace.db"));
@@ -89,12 +107,18 @@ public partial class App
             return;
         }
 
-        _mainWindow.Show();
+        if (!_mainWindow.IsVisible)
+        {
+            _mainWindow.Show();
+        }
         if (_mainWindow.WindowState == WindowState.Minimized)
         {
             _mainWindow.WindowState = WindowState.Normal;
         }
         _mainWindow.Activate();
+        _mainWindow.Topmost = true;
+        _mainWindow.Topmost = false;
+        _mainWindow.Focus();
     }
 
     public void RequestExit()
@@ -107,6 +131,8 @@ public partial class App
     protected override void OnExit(ExitEventArgs e)
     {
         Log("Stopping SoftTrace.");
+        _registeredWaitHandle?.Unregister(null);
+        _showWindowHandle?.Dispose();
         _trayIcon?.Dispose();
         _trayIconImage?.Dispose();
         if (_syncCoordinator is not null)
@@ -162,4 +188,36 @@ public partial class App
         {
         }
     }
+
+    private static void MigrateLegacyData(string targetDirectory)
+    {
+        try
+        {
+            var legacyDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Packages",
+                "OpenAI.Codex_2p2nqsd0c76g0",
+                "LocalCache",
+                "Local",
+                "SoftTrace");
+            if (!Directory.Exists(legacyDir))
+            {
+                return;
+            }
+
+            foreach (var filePath in Directory.GetFiles(legacyDir))
+            {
+                var fileName = Path.GetFileName(filePath);
+                var destPath = Path.Combine(targetDirectory, fileName);
+                if (!File.Exists(destPath) || new FileInfo(destPath).Length < new FileInfo(filePath).Length)
+                {
+                    File.Copy(filePath, destPath, overwrite: true);
+                }
+            }
+        }
+        catch
+        {
+        }
+    }
 }
+
