@@ -149,12 +149,77 @@ public partial class App
         base.OnExit(e);
     }
 
+    private readonly StartupService _startupService = new();
+    private System.Windows.Controls.ContextMenu? _trayContextMenu;
+    private System.Windows.Controls.MenuItem? _autoStartTrayMenuItem;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr windowHandle);
+
     private void CreateTrayIcon()
     {
-        var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("打开 SoftTrace", null, (_, _) => Dispatcher.Invoke(ShowMainWindow));
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add("退出", null, (_, _) => Dispatcher.Invoke(RequestExit));
+        _trayContextMenu = new System.Windows.Controls.ContextMenu
+        {
+            Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint,
+            HorizontalOffset = -184,
+            StaysOpen = false
+        };
+
+        var openItem = new System.Windows.Controls.MenuItem
+        {
+            Header = "打开 SoftTrace"
+        };
+        openItem.Click += (_, _) => Dispatcher.Invoke(ShowMainWindow);
+        _trayContextMenu.Items.Add(openItem);
+
+        _trayContextMenu.Items.Add(new System.Windows.Controls.Separator());
+
+        _autoStartTrayMenuItem = new System.Windows.Controls.MenuItem
+        {
+            Header = "开机自启动",
+            IsCheckable = true
+        };
+        _autoStartTrayMenuItem.Click += (_, _) =>
+        {
+            var isEnabled = _startupService.IsEnabled();
+            try
+            {
+                _startupService.SetEnabled(!isEnabled);
+                _autoStartTrayMenuItem.IsChecked = !isEnabled;
+            }
+            catch (Exception ex)
+            {
+                _autoStartTrayMenuItem.IsChecked = isEnabled;
+                MessageBox.Show($"设置开机自启动失败：{ex.Message}", "开机自启动", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        };
+        _trayContextMenu.Items.Add(_autoStartTrayMenuItem);
+
+        _trayContextMenu.Items.Add(new System.Windows.Controls.Separator());
+
+        var exitItem = new System.Windows.Controls.MenuItem
+        {
+            Header = "退出"
+        };
+        exitItem.Click += (_, _) => Dispatcher.Invoke(RequestExit);
+        _trayContextMenu.Items.Add(exitItem);
+
+        _trayContextMenu.Opened += (_, _) =>
+        {
+            if (_autoStartTrayMenuItem is not null)
+            {
+                _autoStartTrayMenuItem.IsChecked = _startupService.IsEnabled();
+            }
+
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, () =>
+            {
+                if (System.Windows.PresentationSource.FromVisual(_trayContextMenu) is System.Windows.Interop.HwndSource source)
+                {
+                    SetForegroundWindow(source.Handle);
+                    _trayContextMenu.Focus();
+                }
+            });
+        };
 
         _trayIconImage = !string.IsNullOrWhiteSpace(Environment.ProcessPath)
             ? Icon.ExtractAssociatedIcon(Environment.ProcessPath)
@@ -165,10 +230,40 @@ public partial class App
         {
             Text = "SoftTrace 正在记录软件使用时间",
             Icon = _trayIconImage,
-            ContextMenuStrip = menu,
             Visible = true
         };
-        _trayIcon.DoubleClick += (_, _) => Dispatcher.Invoke(ShowMainWindow);
+
+        _trayIcon.MouseUp += (_, e) =>
+        {
+            if (e.Button == Forms.MouseButtons.Left)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (_trayContextMenu is not null)
+                    {
+                        _trayContextMenu.IsOpen = false;
+                    }
+                    ShowMainWindow();
+                });
+            }
+            else if (e.Button == Forms.MouseButtons.Right)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (_trayContextMenu is null)
+                    {
+                        return;
+                    }
+
+                    if (_autoStartTrayMenuItem is not null)
+                    {
+                        _autoStartTrayMenuItem.IsChecked = _startupService.IsEnabled();
+                    }
+
+                    _trayContextMenu.IsOpen = true;
+                });
+            }
+        };
     }
 
     private void Log(string message)
@@ -220,4 +315,3 @@ public partial class App
         }
     }
 }
-

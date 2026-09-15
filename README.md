@@ -18,6 +18,8 @@ SoftTrace 是一个轻量级 Windows 软件使用时间追踪工具。它在本�
 - 每台电脑使用稳定设备 ID，可查看全部设备或单台设备统计
 - 同步区间使用稳定 `sync_id` 去重，重复拉取不会重复累计
 - Firebase 刷新令牌使用当前 Windows 用户的 DPAPI 加密保存
+- 可直接导入 ManicTime 备份 ZIP 或 `ManicTimeReports.db`
+- 导入时合并同一应用的连续记录，并只填补 SoftTrace 尚未覆盖的时间
 
 ## 直接运行
 
@@ -39,6 +41,12 @@ dist/SoftTrace-v0.2.0-win-x64/SoftTrace.exe
 
 SQLite 始终是本机采集的权威副本；断网期间继续记录，联网后自动补传。`firebase-sync.json` 只保存账号信息和经 DPAPI 加密的 Firebase 刷新令牌，不保存 Google 密码。
 
+## 导入 ManicTime 历史数据
+
+点击主窗口右上角的“导入 ManicTime”，选择 ManicTime 生成的备份 ZIP 或解压后的 `ManicTimeReports.db`。导入记录归到当前电脑，并参与正常的本地统计与云同步。
+
+SoftTrace 数据优先：导入器会从每条 ManicTime 活动中扣除当前电脑已有记录覆盖的时间，完全重叠的记录跳过，部分重叠的记录只保留未覆盖部分。导入 ID 是稳定的，因此重复选择同一备份不会重复累计。
+
 ## 开发与验证
 
 ```powershell
@@ -50,4 +58,4 @@ SQLite 始终是本机采集的权威副本；断网期间继续记录，联网�
 
 ## 当前边界
 
-v0.2 专注于可靠采集、软件排行和 Firebase 多设备同步，暂不包含每日时间轴、开机自启、CSV 导出或 ManicTime 历史导入。这些能力会在后续版本中逐步加入。
+v0.2 专注于可靠采集、软件排行、ManicTime 历史导入和 Firebase 多设备同步，暂不包含每日时间轴、开机自启或 CSV 导出。这些能力会在后续版本中逐步加入。

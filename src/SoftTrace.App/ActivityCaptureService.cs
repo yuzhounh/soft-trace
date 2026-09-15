@@ -43,6 +43,10 @@ public sealed class ActivityCaptureService : IAsyncDisposable
 
     public bool IsPaused { get; private set; }
 
+    public string DeviceId => _deviceId;
+
+    public string DeviceName => _deviceName;
+
     public int IdleThresholdMinutes { get; set; }
 
     public CaptureStatus CurrentStatus =>

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SoftTrace.App"
         mc:Ignorable="d"
-        Title="SoftTrace" Height="700" Width="1000" MinHeight="580" MinWidth="820"
+        Title="SoftTrace" Icon="Assets/SoftTrace.ico" Height="700" Width="1000" MinHeight="580" MinWidth="820"
         Background="{StaticResource PageBrush}" WindowStartupLocation="CenterScreen"
         FontFamily="Microsoft YaHei" FontSize="15">
     <Window.Resources>
@@ -195,6 +195,115 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="AccountMenuButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="MenuItemBackground"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="MenuItemBackground" Property="Background" Value="#F0F2F7" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="MenuItemBackground" Property="Background" Value="#E7EAF2" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="MenuItemBackground" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PagingButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Margin" Value="4,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#D5DAE5" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="ButtonBorder"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#F3F5FA" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#C9D0E0" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TopActionButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="FontFamily" Value="Microsoft YaHei" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#D5DAE5" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#344BA8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="ButtonBorder"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="7">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#F4F6FC" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#BCC6DF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#E9EDF9" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Grid Margin="28">
         <Grid.RowDefinitions>
@@ -202,6 +311,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0" Margin="0,0,0,22">
@@ -215,10 +325,20 @@
                 <TextBlock Text="软件使用时间，一目了然" Margin="1,6,0,0"
                            Foreground="{StaticResource MutedTextBrush}" FontSize="15" />
             </StackPanel>
-            <Grid Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button x:Name="GoogleSignInButton" Content="Google 登录"
-                        Margin="0" Padding="15,8" Foreground="#344BA8"
-                        FontSize="15" FontWeight="SemiBold" Click="GoogleSignInButton_OnClick" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal"
+                        HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button x:Name="ImportButton" Content="导入"
+                        Style="{StaticResource TopActionButtonStyle}"
+                        ToolTip="导入 SoftTrace JSON 数据或 ManicTime 备份"
+                        Click="ImportButton_OnClick" />
+                <Button x:Name="ExportButton" Content="导出"
+                        Style="{StaticResource TopActionButtonStyle}"
+                        ToolTip="将活动记录导出为 SoftTrace JSON 数据包"
+                        Click="ExportButton_OnClick" />
+                <Grid>
+                    <Button x:Name="GoogleSignInButton" Content="Google 登录"
+                            Margin="0" Padding="15,8" Foreground="#344BA8"
+                            FontSize="15" FontWeight="SemiBold" Click="GoogleSignInButton_OnClick" />
                 <ToggleButton x:Name="CloudAccountButton" Visibility="Collapsed"
                               Width="44" Height="44" Background="Transparent"
                               BorderThickness="0" Cursor="Hand" FocusVisualStyle="{x:Null}">
@@ -246,30 +366,69 @@
                     </Grid>
                 </ToggleButton>
                 <Popup x:Name="CloudAccountPopup" PlacementTarget="{Binding ElementName=CloudAccountButton}"
-                       Placement="Bottom" HorizontalOffset="-244" VerticalOffset="8"
+                       Placement="Bottom" HorizontalOffset="-184" VerticalOffset="8"
                        IsOpen="{Binding IsChecked, ElementName=CloudAccountButton, Mode=TwoWay}"
                        StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
-                    <Border Width="290" Padding="16" Background="#FFFFFF"
+                    <Border Width="240" Padding="16" Background="#FFFFFF"
                             BorderBrush="#E1E5EE" BorderThickness="1" CornerRadius="10">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.16" />
                         </Border.Effect>
                         <StackPanel>
-                            <TextBlock x:Name="CloudAccountText" TextTrimming="CharacterEllipsis"
-                                       Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" FontSize="15" />
-                            <TextBlock x:Name="CloudStatusText" Margin="0,6,0,14"
-                                       TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="13" />
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button x:Name="SyncNowButton" Content="立即同步" Margin="0,0,7,0"
-                                        Padding="10,5" ToolTip="每 1 分钟自动同步" FontSize="13"
-                                        Click="SyncNowButton_OnClick" />
-                                <Button x:Name="GoogleSignOutButton" Content="退出" Margin="0"
-                                        Padding="10,5" FontSize="13" Click="GoogleSignOutButton_OnClick" />
-                            </StackPanel>
+                            <TextBlock x:Name="CloudDisplayNameText" Text="Google 用户"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextBrush}"
+                                       FontWeight="SemiBold" FontSize="16" />
+                            <TextBlock x:Name="CloudAccountText" Margin="0,5,0,0"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource MutedTextBrush}" FontSize="13" />
+                            <Border Height="1" Margin="0,14,0,10" Background="#E8EBF1" />
+                            <Button x:Name="SyncNowButton"
+                                    Style="{StaticResource AccountMenuButtonStyle}"
+                                    Margin="0,0,0,4" ToolTip="每 1 分钟自动同步"
+                                    Click="SyncNowButton_OnClick">
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16" VerticalAlignment="Center">
+                                        <Path Width="16" Height="16" Stretch="Uniform"
+                                              Stroke="#697180" StrokeThickness="1.5"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              StrokeLineJoin="Round"
+                                              Data="M 13.6,4.4 C 12.3,2.9 10.4,2 8.3,2 C 5.1,2 2.5,4.3 2,7.4 M 2,7.4 L 0.5,5.5 M 2,7.4 L 4.1,6.2 M 2.4,11.6 C 3.7,13.1 5.6,14 7.7,14 C 10.9,14 13.5,11.7 14,8.6 M 14,8.6 L 15.5,10.5 M 14,8.6 L 11.9,9.8" />
+                                    </Viewbox>
+                                    <TextBlock Text="立即同步" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <CheckBox x:Name="AutoStartCheckBox" Content="开机自启动"
+                                      Margin="10,6,10,6" FontSize="14" Cursor="Hand"
+                                      Foreground="{StaticResource TextBrush}"
+                                      Click="AutoStartCheckBox_OnClick" />
+                            <Button x:Name="GoogleSignOutButton"
+                                    Style="{StaticResource AccountMenuButtonStyle}"
+                                    Margin="0,4,0,0"
+                                    Click="GoogleSignOutButton_OnClick">
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16" VerticalAlignment="Center">
+                                        <Path Width="16" Height="16" Stretch="Uniform"
+                                              Stroke="#697180" StrokeThickness="1.5"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              StrokeLineJoin="Round"
+                                              Data="M 6,2 L 13,2 L 13,14 L 6,14 M 9,8 L 1,8 M 4,5 L 1,8 L 4,11" />
+                                    </Viewbox>
+                                    <TextBlock Text="退出账号" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Border Margin="0,12,0,0" Padding="10,8"
+                                    Background="#F6F7FA" CornerRadius="6">
+                                <TextBlock x:Name="CloudStatusText"
+                                           TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}"
+                                           FontSize="13" LineHeight="22"
+                                           LineStackingStrategy="BlockLineHeight" />
+                            </Border>
                         </StackPanel>
                     </Border>
                 </Popup>
-            </Grid>
+                </Grid>
+            </StackPanel>
         </Grid>
 
         <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="10"
@@ -284,11 +443,17 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,14,0">
                     <TextBlock Text="开始日期" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
-                    <DatePicker x:Name="FromDatePicker" Width="150" Height="36" SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
+                    <DatePicker x:Name="FromDatePicker" Width="150" Height="36"
+                                CalendarStyle="{StaticResource LargeCalendarStyle}"
+                                CalendarOpened="DatePicker_OnCalendarOpened"
+                                SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="0,0,20,0">
                     <TextBlock Text="结束日期" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
-                    <DatePicker x:Name="ToDatePicker" Width="150" Height="36" SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
+                    <DatePicker x:Name="ToDatePicker" Width="150" Height="36"
+                                CalendarStyle="{StaticResource LargeCalendarStyle}"
+                                CalendarOpened="DatePicker_OnCalendarOpened"
+                                SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Margin="0,0,20,0">
                     <TextBlock Text="范围" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
@@ -311,12 +476,114 @@
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Column="3" Margin="0,0,20,0">
-                    <TextBlock Text="设备" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
-                    <ComboBox x:Name="DeviceFilterComboBox" Width="150" Height="36"
-                              Style="{StaticResource RangeComboBoxStyle}"
-                              ItemsSource="{Binding DeviceFilters}" DisplayMemberPath="Name"
-                              SelectedValuePath="Id" Cursor="Hand" VerticalContentAlignment="Center"
-                              SelectionChanged="DeviceFilterComboBox_OnSelectionChanged" />
+                    <TextBlock Text="设备" Width="190" Margin="0,0,0,6"
+                               Foreground="{StaticResource MutedTextBrush}" FontSize="14" />
+                    <ToggleButton x:Name="DeviceFilterToggleButton" Width="190" Height="36" Content="当前设备"
+                                  Cursor="Hand" FocusVisualStyle="{x:Null}">
+                        <ToggleButton.Template>
+                            <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                <Border x:Name="DeviceFilterBorder" Background="#FFFFFF"
+                                        BorderBrush="#D5DAE5" BorderThickness="1">
+                                    <Grid>
+                                        <TextBlock Text="{TemplateBinding Content}"
+                                                   Margin="10,0,30,0" VerticalAlignment="Center"
+                                                   Foreground="{StaticResource TextBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Path Width="8" Height="4" Margin="0,0,11,0"
+                                              HorizontalAlignment="Right" VerticalAlignment="Center"
+                                              Data="M 0 0 L 4 4 L 8 0"
+                                              Stroke="#697180" StrokeThickness="1.4" />
+                                    </Grid>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="DeviceFilterBorder" Property="Background" Value="#F7F8FA" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </ToggleButton.Template>
+                    </ToggleButton>
+                    <Popup x:Name="DeviceFilterPopup"
+                           PlacementTarget="{Binding ElementName=DeviceFilterToggleButton}"
+                           Placement="Bottom" VerticalOffset="2"
+                           IsOpen="{Binding IsChecked, ElementName=DeviceFilterToggleButton, Mode=TwoWay}"
+                           StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade"
+                           Closed="DeviceFilterPopup_OnClosed">
+                        <Border Width="230" MaxHeight="300" Padding="3"
+                                Background="#FFFFFF" BorderBrush="#D5DAE5"
+                                BorderThickness="1" CornerRadius="6">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding DeviceFilters}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="DeviceRow" Margin="1" Padding="9,6"
+                                                    Background="Transparent" CornerRadius="5"
+                                                    Cursor="Hand"
+                                                    MouseLeftButtonUp="DeviceFilterItem_OnMouseLeftButtonUp">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="DeviceNameText" Text="{Binding Name}"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="{StaticResource TextBrush}"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <TextBox x:Name="DeviceNameEditor"
+                                                             Grid.Column="0" Grid.ColumnSpan="2"
+                                                             Height="28" Padding="5,0" MaxLength="64"
+                                                             Visibility="Collapsed"
+                                                             Text="{Binding Name, Mode=OneTime}"
+                                                             VerticalContentAlignment="Center"
+                                                             BorderBrush="#AEBBE2" BorderThickness="1"
+                                                             LostKeyboardFocus="DeviceNameEditor_OnLostKeyboardFocus"
+                                                             KeyDown="DeviceNameEditor_OnKeyDown" />
+                                                    <Button x:Name="DeviceEditButton" Grid.Column="1"
+                                                            Width="25" Height="25" Margin="6,0,0,0"
+                                                            Visibility="Collapsed" Background="Transparent"
+                                                            BorderThickness="0" Cursor="Hand"
+                                                            FocusVisualStyle="{x:Null}" ToolTip="编辑设备名称"
+                                                            PreviewMouseLeftButtonDown="DeviceEditButton_OnPreviewMouseLeftButtonDown">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="{x:Type Button}">
+                                                                <Border x:Name="EditButtonBackground"
+                                                                        Background="Transparent" CornerRadius="4">
+                                                                    <Path Width="13" Height="13" Stretch="Uniform"
+                                                                          Stroke="#53699F" StrokeThickness="1.5"
+                                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                                          StrokeLineJoin="Round"
+                                                                          Data="M 2,11 L 4.8,10.4 L 11.2,4 L 8,0.8 L 1.6,7.2 Z M 7.2,1.6 L 10.4,4.8" />
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="EditButtonBackground"
+                                                                                Property="Background" Value="#DDE5F8" />
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <Trigger SourceName="DeviceRow" Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="DeviceRow" Property="Background" Value="#F0F3FA" />
+                                                    <Setter TargetName="DeviceEditButton" Property="Visibility" Value="Visible" />
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter TargetName="DeviceRow" Property="Background" Value="#E8EEFF" />
+                                                    <Setter TargetName="DeviceNameText" Property="Foreground" Value="#344BA8" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Id}" Value="">
+                                                    <Setter TargetName="DeviceEditButton" Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </Popup>
                 </StackPanel>
                 <StackPanel Grid.Column="4" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <TextBlock x:Name="CaptureStateText" Text="正在记录"
@@ -342,9 +609,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="软件使用排行" FontSize="21" FontWeight="SemiBold"
-                           Foreground="{StaticResource TextBrush}" />
-                <TextBlock x:Name="RangeSummaryText" Margin="0,6,0,0"
+                <TextBlock x:Name="RangeSummaryText" Margin="0,36,0,0"
                            Foreground="{StaticResource MutedTextBrush}" FontSize="14" />
             </StackPanel>
             <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -355,21 +620,28 @@
             </StackPanel>
         </Grid>
 
-        <local:RoundedClipBorder Grid.Row="3" Background="#F8F9FC"
+        <local:RoundedClipBorder x:Name="UsageTableBorder" Grid.Row="3" VerticalAlignment="Stretch"
+                                 Background="#F8F9FC"
                                  BorderBrush="#E6E9F0" BorderThickness="1" CornerRadius="11">
             <DataGrid x:Name="UsageDataGrid" ItemsSource="{Binding UsageRows}" AutoGenerateColumns="False"
                       IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
-                      CanUserResizeRows="False" SelectionUnit="FullRow"
+                      CanUserResizeRows="False" CanUserResizeColumns="True" SelectionUnit="FullRow"
+                      PreviewMouseLeftButtonUp="UsageDataGrid_OnPreviewMouseLeftButtonUp"
+                      Sorting="UsageDataGrid_OnSorting"
                       HeadersVisibility="Column" GridLinesVisibility="None"
                       BorderThickness="0" FocusVisualStyle="{x:Null}"
                       RowHeaderWidth="0" RowHeight="38" ColumnHeaderHeight="40"
                       Background="#F8F9FC" RowBackground="#FFFFFF"
                       AlternatingRowBackground="#FAFBFD"
-                      HorizontalScrollBarVisibility="Disabled">
+                      ScrollViewer.CanContentScroll="False"
+                      HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Resources>
                     <Style x:Key="CenteredDataGridText" TargetType="TextBlock">
                         <Setter Property="VerticalAlignment" Value="Center" />
+                        <Setter Property="Margin" Value="8,0,0,0" />
                         <Setter Property="FontSize" Value="15" />
+                        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                        <Setter Property="TextWrapping" Value="NoWrap" />
                     </Style>
                     <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernScrollBarStyle}" />
                 </DataGrid.Resources>
@@ -394,35 +666,24 @@
                                                 <RowDefinition Height="*" />
                                                 <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
-                                            <Button Command="{x:Static DataGrid.SelectAllCommand}"
-                                                    Focusable="False"
-                                                    Visibility="{Binding HeadersVisibility, Converter={x:Static DataGrid.HeadersVisibilityConverter}, ConverterParameter={x:Static DataGridHeadersVisibility.All}, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
-                                                    Width="{Binding CellsPanelHorizontalOffset, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                             <DataGridColumnHeadersPresenter x:Name="PART_ColumnHeadersPresenter"
                                                                             Grid.Column="1"
-                                                                            Visibility="{Binding HeadersVisibility, Converter={x:Static DataGrid.HeadersVisibilityConverter}, ConverterParameter={x:Static DataGridHeadersVisibility.Column}, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
-                                            <Border Grid.Column="2" Grid.Row="0"
-                                                    Background="#F8F9FC"
-                                                    BorderBrush="#E4E7ED"
-                                                    BorderThickness="0,0,0,1" />
+                                                                            Visibility="{Binding HeadersVisibility, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}, ConverterParameter={x:Static DataGridHeadersVisibility.Column}, Converter={x:Static DataGrid.HeadersVisibilityConverter}}" />
                                             <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
                                                                     Grid.ColumnSpan="2" Grid.Row="1"
                                                                     CanContentScroll="{TemplateBinding CanContentScroll}" />
-                                            <ScrollBar x:Name="PART_VerticalScrollBar"
-                                                       Grid.Column="2" Grid.Row="1"
+                                            <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="2" Grid.Row="1"
                                                        Orientation="Vertical"
-                                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
-                                                       Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                                                        ViewportSize="{TemplateBinding ViewportHeight}"
-                                                       Minimum="0" Maximum="{TemplateBinding ScrollableHeight}" />
-                                            <Grid Grid.Column="1" Grid.Row="2">
-                                                <ScrollBar x:Name="PART_HorizontalScrollBar"
-                                                           Orientation="Horizontal"
-                                                           Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
-                                                           Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                                           ViewportSize="{TemplateBinding ViewportWidth}"
-                                                           Minimum="0" Maximum="{TemplateBinding ScrollableWidth}" />
-                                            </Grid>
+                                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                                       Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
+                                            <ScrollBar x:Name="PART_HorizontalScrollBar" Grid.Column="1" Grid.Row="2"
+                                                       Orientation="Horizontal"
+                                                       ViewportSize="{TemplateBinding ViewportWidth}"
+                                                       Maximum="{TemplateBinding ScrollableWidth}"
+                                                       Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
+                                                       Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
                                         </Grid>
                                     </ControlTemplate>
                                 </ScrollViewer.Template>
@@ -450,11 +711,12 @@
                 </DataGrid.RowStyle>
                 <DataGrid.CellStyle>
                     <Style TargetType="DataGridCell">
-                        <Setter Property="Padding" Value="7,0" />
+                        <Setter Property="Padding" Value="0" />
                         <Setter Property="VerticalContentAlignment" Value="Center" />
                         <Setter Property="BorderThickness" Value="0" />
                         <Setter Property="Background" Value="Transparent" />
                         <Setter Property="FontSize" Value="15" />
+                        <Setter Property="ClipToBounds" Value="True" />
                         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
                         <Style.Triggers>
                             <Trigger Property="IsSelected" Value="True">
@@ -494,9 +756,30 @@
                                                   Width="8" Height="4" Margin="0,0,10,0"
                                                   HorizontalAlignment="Right" VerticalAlignment="Center"
                                                   Fill="#7B8494" Data="M 0 0 L 4 4 L 8 0 Z" />
+                                            <Thumb x:Name="PART_LeftHeaderGripper" Width="8"
+                                                   HorizontalAlignment="Left" Background="Transparent"
+                                                   Cursor="SizeWE">
+                                                <Thumb.Template>
+                                                    <ControlTemplate TargetType="Thumb">
+                                                        <Border Background="Transparent" />
+                                                    </ControlTemplate>
+                                                </Thumb.Template>
+                                            </Thumb>
+                                            <Thumb x:Name="PART_RightHeaderGripper" Width="8"
+                                                   HorizontalAlignment="Right" Background="Transparent"
+                                                   Cursor="SizeWE">
+                                                <Thumb.Template>
+                                                    <ControlTemplate TargetType="Thumb">
+                                                        <Border Background="Transparent" />
+                                                    </ControlTemplate>
+                                                </Thumb.Template>
+                                            </Thumb>
                                         </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>
+                                        <Trigger Property="DisplayIndex" Value="3">
+                                            <Setter TargetName="HeaderBorder" Property="BorderThickness" Value="0,0,0,1" />
+                                        </Trigger>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="HeaderBorder" Property="Background" Value="#EEF1F7" />
                                         </Trigger>
@@ -513,10 +796,16 @@
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="软件" Width="*" SortMemberPath="AppName" CanUserSort="True">
+                    <DataGridTemplateColumn Header="软件" Width="*" MinWidth="240"
+                                            SortMemberPath="AppName" CanUserSort="True" CanUserResize="True">
+                        <DataGridTemplateColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="软件" Margin="29,0,0,0" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.HeaderTemplate>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
                                     <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,0,9,0"
                                            RenderOptions.BitmapScalingMode="HighQuality" />
                                     <TextBlock Text="{Binding AppName}" VerticalAlignment="Center" FontSize="15" />
@@ -524,18 +813,57 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="进程" Binding="{Binding ProcessName}" Width="180"
+                    <DataGridTextColumn Header="进程" Binding="{Binding ProcessName}" Width="180" MinWidth="120"
+                                        CanUserResize="True"
                                         SortMemberPath="ProcessName"
                                         ElementStyle="{StaticResource CenteredDataGridText}" />
-                    <DataGridTextColumn Header="使用时长" Binding="{Binding DurationText}" Width="130"
+                    <DataGridTextColumn Header="使用时长" Binding="{Binding DurationText}" Width="130" MinWidth="100"
+                                        CanUserResize="True"
                                         SortMemberPath="DurationSeconds"
                                         ElementStyle="{StaticResource CenteredDataGridText}" />
-                    <DataGridTextColumn Header="占比" Binding="{Binding ShareText}" Width="95"
+                    <DataGridTextColumn Header="占比" Binding="{Binding ShareText}" Width="95" MinWidth="75"
+                                        CanUserResize="True"
                                         SortMemberPath="ShareRatio"
                                         ElementStyle="{StaticResource CenteredDataGridText}" />
                 </DataGrid.Columns>
             </DataGrid>
         </local:RoundedClipBorder>
+
+        <!-- Pagination Controls Bar -->
+        <Grid Grid.Row="4" Margin="4,12,4,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock x:Name="PaginationSummaryText" Text="共 0 条记录"
+                           Foreground="{StaticResource MutedTextBrush}" FontSize="13" VerticalAlignment="Center" />
+                <TextBlock Text="，每页" Foreground="{StaticResource MutedTextBrush}" FontSize="13" VerticalAlignment="Center" Margin="2,0,0,0" />
+                <ComboBox x:Name="PageSizeComboBox" Width="70" Height="28" Margin="6,0,0,0"
+                          VerticalContentAlignment="Center" FontSize="13"
+                          SelectionChanged="PageSizeComboBox_OnSelectionChanged">
+                    <ComboBoxItem Content="20" />
+                    <ComboBoxItem Content="50" IsSelected="True" />
+                    <ComboBoxItem Content="100" />
+                    <ComboBoxItem Content="200" />
+                </ComboBox>
+                <TextBlock Text="条" Foreground="{StaticResource MutedTextBrush}" FontSize="13" VerticalAlignment="Center" Margin="6,0,0,0" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                <Button x:Name="FirstPageButton" Content="首页" Style="{StaticResource PagingButtonStyle}"
+                        Click="FirstPageButton_OnClick" />
+                <Button x:Name="PreviousPageButton" Content="上一页" Style="{StaticResource PagingButtonStyle}"
+                        Click="PreviousPageButton_OnClick" />
+                <TextBlock x:Name="PageNumberText" Text="第 1 / 1 页"
+                           Foreground="{StaticResource TextBrush}" FontSize="13" FontWeight="SemiBold"
+                           VerticalAlignment="Center" Margin="8,0" />
+                <Button x:Name="NextPageButton" Content="下一页" Style="{StaticResource PagingButtonStyle}"
+                        Click="NextPageButton_OnClick" />
+                <Button x:Name="LastPageButton" Content="末页" Style="{StaticResource PagingButtonStyle}"
+                        Click="LastPageButton_OnClick" />
+            </StackPanel>
+        </Grid>
 
     </Grid>
 </Window>

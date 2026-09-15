@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 
 namespace SoftTrace.Core;
 
-public sealed class ActivityStore(string databasePath)
+public sealed partial class ActivityStore(string databasePath)
 {
     private readonly SemaphoreSlim _writeLock = new(1, 1);
     private readonly string _connectionString = new SqliteConnectionStringBuilder
@@ -232,7 +232,7 @@ public sealed class ActivityStore(string databasePath)
                 reader.GetInt32(4)));
         }
 
-        return results;
+        return ConsolidateUsageSummaries(results);
     }
 
     public async Task<DateTimeOffset?> GetEarliestActivityUtcAsync(
@@ -296,8 +296,7 @@ public sealed class ActivityStore(string databasePath)
                     SET device_id = $device_id,
                         device_name = $device_name,
                         updated_utc = $updated_utc
-                    WHERE (device_id = $legacy_device_id AND device_id <> $device_id)
-                       OR (device_id = $device_id AND device_name <> $device_name);
+                    WHERE device_id = $legacy_device_id AND device_id <> $device_id;
                     """;
                 migrateCommand.Parameters.AddWithValue("$device_id", deviceId);
                 migrateCommand.Parameters.AddWithValue("$device_name", deviceName);
@@ -312,16 +311,39 @@ public sealed class ActivityStore(string databasePath)
         return identity!;
     }
 
+    public Task SetDeviceDisplayNameAsync(
+        string deviceId,
+        string displayName,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
+        displayName = displayName.Trim();
+        if (displayName.Length > 64)
+        {
+            throw new ArgumentException("设备名称不能超过 64 个字符。", nameof(displayName));
+        }
+
+        return SetSettingAsync($"device_display_name:{deviceId}", displayName, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<DeviceSummary>> GetDevicesAsync(
         CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT device_id,
-                   COALESCE(MAX(NULLIF(device_name, '')), device_id) AS display_name
-            FROM activities
-            GROUP BY device_id
+            WITH recorded_devices AS (
+                SELECT device_id,
+                       COALESCE(MAX(NULLIF(device_name, '')), device_id) AS recorded_name
+                FROM activities
+                GROUP BY device_id
+            )
+            SELECT recorded_devices.device_id,
+                   COALESCE(NULLIF(settings.value, ''), recorded_devices.recorded_name) AS display_name
+            FROM recorded_devices
+            LEFT JOIN settings
+              ON settings.key = 'device_display_name:' || recorded_devices.device_id
             ORDER BY display_name COLLATE NOCASE;
             """;
 
@@ -533,6 +555,39 @@ public sealed class ActivityStore(string databasePath)
             command.Parameters.AddWithValue("$document", cursor.DocumentName);
             await command.ExecuteNonQueryAsync(cancellationToken);
         }, cancellationToken);
+
+    public async Task<string?> GetSettingAsync(
+        string key,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT value FROM settings WHERE key = $key;";
+        command.Parameters.AddWithValue("$key", key);
+        return await command.ExecuteScalarAsync(cancellationToken) as string;
+    }
+
+    public Task SetSettingAsync(
+        string key,
+        string value,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(value);
+        return ExecuteWriteAsync(async connection =>
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = """
+                INSERT INTO settings(key, value)
+                VALUES ($key, $value)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+                """;
+            command.Parameters.AddWithValue("$key", key);
+            command.Parameters.AddWithValue("$value", value);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }, cancellationToken);
+    }
 
     public async Task<int> GetIdleThresholdMinutesAsync(
         int defaultValue = 3,

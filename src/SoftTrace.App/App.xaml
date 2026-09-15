@@ -65,11 +65,14 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         </Style>
-        <Style TargetType="Calendar">
+        <Style x:Key="LargeCalendarStyle" TargetType="Calendar">
             <Setter Property="FontFamily" Value="Microsoft YaHei" />
-            <Setter Property="Width" Value="340" />
-            <Setter Property="Height" Value="300" />
             <Setter Property="FontSize" Value="14" />
+            <Setter Property="LayoutTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1.4" ScaleY="1.4" />
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style TargetType="DatePickerTextBox">
             <Setter Property="Background" Value="Transparent" />
@@ -85,6 +88,110 @@
                             <ScrollViewer x:Name="PART_ContentHost"
                                           VerticalAlignment="Center" />
                         </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <SolidColorBrush x:Key="ElevatedSurfaceBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="BorderBrush" Color="#E2E6EF" />
+        <SolidColorBrush x:Key="InputSurfaceBrush" Color="#F0F3FA" />
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#1D2330" />
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#6C7383" />
+
+        <Style TargetType="ContextMenu">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HasDropShadow" Value="False" />
+            <Setter Property="FontFamily" Value="Microsoft YaHei, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{DynamicResource ElevatedSurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="10" Padding="5">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="18" ShadowDepth="5" Opacity="0.16" />
+                            </Border.Effect>
+                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="MenuItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="9,8" />
+            <Setter Property="MinWidth" Value="184" />
+            <Setter Property="FontFamily" Value="Microsoft YaHei, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Grid>
+                            <Border x:Name="MenuItemBorder" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="CheckMark" Text="✓" FontFamily="Segoe UI Symbol" FontSize="13"
+                                               Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Visibility="Collapsed" />
+                                    <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True" />
+                                    <Path x:Name="SubmenuArrow" Grid.Column="2" Data="M 0 0 L 4 4 L 0 8"
+                                          Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.4"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Margin="18,0,2,0" VerticalAlignment="Center" Visibility="Collapsed" />
+                                </Grid>
+                            </Border>
+                            <Popup x:Name="PART_Popup" Placement="Right" AllowsTransparency="True" Focusable="False"
+                                   IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Border Background="{DynamicResource ElevatedSurfaceBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                        CornerRadius="10" Padding="5">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="18" ShadowDepth="5" Opacity="0.16" />
+                                    </Border.Effect>
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="HasItems" Value="True">
+                                <Setter TargetName="SubmenuArrow" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="MenuItemBorder" Property="Background" Value="{DynamicResource InputSurfaceBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="MenuItemBorder" Property="Opacity" Value="0.55" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CompactSubmenuItemStyle" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+            <Setter Property="MinWidth" Value="138" />
+        </Style>
+
+        <Style TargetType="Separator">
+            <Setter Property="Margin" Value="8,4" />
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Separator">
+                        <Border Height="1" Background="{TemplateBinding Background}" />
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
