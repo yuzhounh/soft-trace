@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\SoftTrace.Core\SoftTrace.Core.csproj" />
@@ -10,6 +10,9 @@
 
   <ItemGroup>
     <Resource Include="Assets\SoftTrace.ico" />
+    <None Update="Assets\SoftTrace.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <PropertyGroup>

@@ -86,6 +86,11 @@ public partial class App
             MainWindow = _mainWindow;
             CreateTrayIcon();
             _mainWindow.Show();
+            _mainWindow.WindowState = WindowState.Normal;
+            _mainWindow.Activate();
+            _mainWindow.Topmost = true;
+            _mainWindow.Topmost = false;
+            _mainWindow.Focus();
             Log("Main window shown.");
         }
         catch (Exception exception)
@@ -221,9 +226,29 @@ public partial class App
             });
         };
 
-        _trayIconImage = !string.IsNullOrWhiteSpace(Environment.ProcessPath)
-            ? Icon.ExtractAssociatedIcon(Environment.ProcessPath)
-            : null;
+        try
+        {
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            var iconPath = Path.Combine(appDir, "Assets", "SoftTrace.ico");
+            if (File.Exists(iconPath))
+            {
+                _trayIconImage = new Icon(iconPath);
+            }
+        }
+        catch
+        {
+        }
+
+        if (_trayIconImage is null && !string.IsNullOrWhiteSpace(Environment.ProcessPath))
+        {
+            try
+            {
+                _trayIconImage = Icon.ExtractAssociatedIcon(Environment.ProcessPath);
+            }
+            catch
+            {
+            }
+        }
         _trayIconImage ??= (Icon)SystemIcons.Application.Clone();
 
         _trayIcon = new Forms.NotifyIcon
