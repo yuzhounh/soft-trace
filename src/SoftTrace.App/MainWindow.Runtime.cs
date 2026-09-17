@@ -68,7 +68,7 @@ public partial class MainWindow
         await RestoreUsageColumnWidthsAsync();
         _initialized = true;
         await RefreshDeviceFiltersAsync();
-        await RefreshUsageAsync();
+        await RefreshUsageAsync(resetPage: true);
         _refreshTimer.Start();
         UpdateCaptureStatus(_capture?.CurrentStatus ?? new CaptureStatus(false, false, null));
         UpdateCloudStatus(_syncCoordinator?.CurrentStatus ??
@@ -224,6 +224,26 @@ public partial class MainWindow
             if (current is T match)
             {
                 return match;
+            }
+        }
+
+        return null;
+    }
+
+    private static System.Windows.Controls.ScrollViewer? GetScrollViewer(DependencyObject dep)
+    {
+        if (dep is System.Windows.Controls.ScrollViewer sv)
+        {
+            return sv;
+        }
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(dep); i++)
+        {
+            var child = VisualTreeHelper.GetChild(dep, i);
+            var result = GetScrollViewer(child);
+            if (result is not null)
+            {
+                return result;
             }
         }
 
@@ -479,7 +499,7 @@ public partial class MainWindow
             {
                 var result = await _store.ImportActivitiesFromFileAsync(dialog.FileName);
                 await RefreshDeviceFiltersAsync();
-                await RefreshUsageAsync();
+                await RefreshUsageAsync(resetPage: true);
 
                 var msg = $"导入完成！\n共读取 {result.TotalItemsInPackage:N0} 条记录\n成功导入：{result.ImportedCount:N0} 条（总时长：{FormatDuration(result.ImportedDuration)}）\n重复或重叠跳过：{FormatDuration(result.OverlapDuration)}\n涉及设备数：{result.AffectedDeviceCount}";
                 MessageBox.Show(msg, "SoftTrace 导入完成", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -492,7 +512,7 @@ public partial class MainWindow
                     _capture.DeviceId,
                     _capture.DeviceName);
                 await RefreshDeviceFiltersAsync();
-                await RefreshUsageAsync();
+                await RefreshUsageAsync(resetPage: true);
 
                 var dateRange = result.EarliestUtc is { } earliest && result.LatestUtc is { } latest
                     ? $"\n时间范围：{earliest.ToLocalTime():yyyy-MM-dd} 至 {latest.ToLocalTime():yyyy-MM-dd}"
@@ -559,7 +579,7 @@ public partial class MainWindow
         CurrentAppBadge.Visibility = Visibility.Visible;
     }
 
-    private async Task RefreshUsageAsync()
+    private async Task RefreshUsageAsync(bool resetPage = false)
     {
         if (_store is null ||
             FromDatePicker.SelectedDate is not DateTime fromDate ||
@@ -605,11 +625,14 @@ public partial class MainWindow
             ? fromDate.ToString("yyyy 年 M 月 d 日")
             : $"{fromDate:yyyy-MM-dd} 至 {toDate:yyyy-MM-dd}";
 
-        _currentPage = 1;
-        UpdatePagedView();
+        if (resetPage)
+        {
+            _currentPage = 1;
+        }
+        UpdatePagedView(preserveScroll: !resetPage);
     }
 
-    private void UpdatePagedView()
+    private void UpdatePagedView(bool preserveScroll = false)
     {
         var totalCount = _allUsageRows.Count;
         var totalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / _pageSize));
@@ -627,10 +650,29 @@ public partial class MainWindow
             .Take(_pageSize)
             .ToList();
 
-        UsageRows.Clear();
-        foreach (var item in pagedItems)
+        var scrollViewer = GetScrollViewer(UsageDataGrid);
+        var verticalOffset = scrollViewer?.VerticalOffset ?? 0;
+        var horizontalOffset = scrollViewer?.HorizontalOffset ?? 0;
+        var selectedItem = UsageDataGrid.SelectedItem as UsageDisplayRow;
+
+        // In-place update to preserve scroll position and avoid visual jumping
+        for (var i = 0; i < pagedItems.Count; i++)
         {
-            UsageRows.Add(item);
+            if (i < UsageRows.Count)
+            {
+                if (!UsageRows[i].Equals(pagedItems[i]))
+                {
+                    UsageRows[i] = pagedItems[i];
+                }
+            }
+            else
+            {
+                UsageRows.Add(pagedItems[i]);
+            }
+        }
+        while (UsageRows.Count > pagedItems.Count)
+        {
+            UsageRows.RemoveAt(UsageRows.Count - 1);
         }
 
         PaginationSummaryText.Text = $"共 {totalCount:N0} 条记录";
@@ -640,6 +682,33 @@ public partial class MainWindow
         PreviousPageButton.IsEnabled = _currentPage > 1;
         NextPageButton.IsEnabled = _currentPage < totalPages;
         LastPageButton.IsEnabled = _currentPage < totalPages;
+
+        if (preserveScroll && scrollViewer is not null)
+        {
+            if (verticalOffset > 0)
+            {
+                scrollViewer.ScrollToVerticalOffset(verticalOffset);
+            }
+            if (horizontalOffset > 0)
+            {
+                scrollViewer.ScrollToHorizontalOffset(horizontalOffset);
+            }
+        }
+        else if (!preserveScroll && scrollViewer is not null)
+        {
+            scrollViewer.ScrollToTop();
+        }
+
+        if (selectedItem is not null)
+        {
+            var match = UsageRows.FirstOrDefault(r =>
+                string.Equals(r.AppName, selectedItem.AppName, StringComparison.Ordinal) &&
+                string.Equals(r.ProcessName, selectedItem.ProcessName, StringComparison.Ordinal));
+            if (match is not null)
+            {
+                UsageDataGrid.SelectedItem = match;
+            }
+        }
     }
 
     private void FirstPageButton_OnClick(object sender, RoutedEventArgs e)
@@ -647,7 +716,7 @@ public partial class MainWindow
         if (_currentPage != 1)
         {
             _currentPage = 1;
-            UpdatePagedView();
+            UpdatePagedView(preserveScroll: false);
         }
     }
 
@@ -656,7 +725,7 @@ public partial class MainWindow
         if (_currentPage > 1)
         {
             _currentPage--;
-            UpdatePagedView();
+            UpdatePagedView(preserveScroll: false);
         }
     }
 
@@ -666,7 +735,7 @@ public partial class MainWindow
         if (_currentPage < totalPages)
         {
             _currentPage++;
-            UpdatePagedView();
+            UpdatePagedView(preserveScroll: false);
         }
     }
 
@@ -676,7 +745,7 @@ public partial class MainWindow
         if (_currentPage != totalPages)
         {
             _currentPage = totalPages;
-            UpdatePagedView();
+            UpdatePagedView(preserveScroll: false);
         }
     }
 
@@ -691,7 +760,7 @@ public partial class MainWindow
         {
             _pageSize = newSize;
             _currentPage = 1;
-            UpdatePagedView();
+            UpdatePagedView(preserveScroll: false);
         }
     }
 
@@ -788,7 +857,7 @@ public partial class MainWindow
         {
             _applyingPeriod = false;
         }
-        await RefreshUsageAsync();
+        await RefreshUsageAsync(resetPage: true);
     }
 
     private async void DatePicker_OnSelectedDateChanged(
@@ -806,7 +875,7 @@ public partial class MainWindow
             {
                 _applyingPeriod = false;
             }
-            await RefreshUsageAsync();
+            await RefreshUsageAsync(resetPage: true);
         }
     }
 
@@ -860,7 +929,7 @@ public partial class MainWindow
         DeviceFilterToggleButton.IsChecked = false;
         if (_initialized)
         {
-            await RefreshUsageAsync();
+            await RefreshUsageAsync(resetPage: true);
         }
     }
 
