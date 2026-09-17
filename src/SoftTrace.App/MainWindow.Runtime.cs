@@ -37,7 +37,6 @@ public partial class MainWindow
         Interval = TimeSpan.FromMilliseconds(400)
     };
     private readonly ConcurrentDictionary<string, ImageSource> _iconCache = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, ImageSource> _fallbackBadgeCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, bool> _resolvedOrFailedKeys = new(StringComparer.OrdinalIgnoreCase);
     private CancellationTokenSource? _iconResolutionCts;
 
@@ -623,7 +622,7 @@ public partial class MainWindow
             var cacheKey = GetCacheKey(row.ProcessName, row.ExecutablePath);
             if (!_iconCache.TryGetValue(cacheKey, out var icon))
             {
-                icon = GetOrCreateLetterBadge(row.AppName ?? row.ProcessName);
+                icon = GenericApplicationIcon;
             }
 
             _allUsageRows.Add(new UsageDisplayRow(
@@ -1155,12 +1154,6 @@ public partial class MainWindow
     private static string GetCacheKey(string processName, string? executablePath) =>
         string.IsNullOrWhiteSpace(processName) ? (executablePath ?? "unknown") : processName;
 
-    private ImageSource GetOrCreateLetterBadge(string text)
-    {
-        var key = string.IsNullOrWhiteSpace(text) ? "?" : text.Trim();
-        return _fallbackBadgeCache.GetOrAdd(key, k => GenerateLetterBadge(k));
-    }
-
     private void TriggerLazyIconResolution(IReadOnlyList<UsageDisplayRow> pagedItems)
     {
         _iconResolutionCts?.Cancel();
@@ -1227,7 +1220,7 @@ public partial class MainWindow
             return cachedIcon;
         }
 
-        var fallback = GetOrCreateLetterBadge(appName ?? processName);
+        var fallback = GenericApplicationIcon;
 
         // Fast disk cache check
         try
@@ -1886,49 +1879,18 @@ public partial class MainWindow
         return string.Concat(name.Select(c => invalid.Contains(c) ? '_' : c)).ToLowerInvariant();
     }
 
-    private static ImageSource GenerateLetterBadge(string text)
+    private static readonly Lazy<ImageSource> _genericApplicationIcon = new(() =>
     {
-        const int size = 20;
-        var dv = new DrawingVisual();
-        using (var dc = dv.RenderOpen())
-        {
-            var hash = Math.Abs(text.GetHashCode());
-            var colors = new[]
-            {
-                Color.FromRgb(0x4F, 0x46, 0xE5), // Indigo
-                Color.FromRgb(0x02, 0x84, 0xC7), // Sky blue
-                Color.FromRgb(0x0D, 0x94, 0x88), // Teal
-                Color.FromRgb(0x16, 0xA3, 0x4A), // Green
-                Color.FromRgb(0xD9, 0x77, 0x06), // Amber
-                Color.FromRgb(0xEA, 0x58, 0x0C), // Orange
-                Color.FromRgb(0xDC, 0x26, 0x26), // Red
-                Color.FromRgb(0x93, 0x33, 0xEA), // Purple
-                Color.FromRgb(0xDB, 0x27, 0x77), // Pink
-                Color.FromRgb(0x47, 0x55, 0x69)  // Slate
-            };
-            var bgColor = colors[hash % colors.Length];
-            dc.DrawRoundedRectangle(new SolidColorBrush(bgColor), null, new Rect(0, 0, size, size), 5, 5);
+        using var icon = (System.Drawing.Icon)System.Drawing.SystemIcons.Application.Clone();
+        var image = Imaging.CreateBitmapSourceFromHIcon(
+            icon.Handle,
+            Int32Rect.Empty,
+            BitmapSizeOptions.FromWidthAndHeight(20, 20));
+        image.Freeze();
+        return image;
+    });
 
-            var letter = string.IsNullOrWhiteSpace(text) ? "?" : text.Trim()[0].ToString().ToUpperInvariant();
-            var formattedText = new FormattedText(
-                letter,
-                System.Globalization.CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                new Typeface(new FontFamily("Segoe UI, Microsoft YaHei"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
-                11,
-                Brushes.White,
-                1.0);
-
-            var x = (size - formattedText.Width) / 2.0;
-            var y = (size - formattedText.Height) / 2.0;
-            dc.DrawText(formattedText, new Point(Math.Max(0, x), Math.Max(0, y)));
-        }
-
-        var rtb = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
-        rtb.Render(dv);
-        rtb.Freeze();
-        return rtb;
-    }
+    private static ImageSource GenericApplicationIcon => _genericApplicationIcon.Value;
 
     public sealed class UsageDisplayRow : System.ComponentModel.INotifyPropertyChanged
     {
