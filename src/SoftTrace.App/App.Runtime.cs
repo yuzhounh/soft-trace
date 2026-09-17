@@ -166,8 +166,9 @@ public partial class App
         _trayContextMenu = new System.Windows.Controls.ContextMenu
         {
             Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint,
-            HorizontalOffset = -184,
-            StaysOpen = false
+            HorizontalOffset = -200,
+            StaysOpen = false,
+            HasDropShadow = false
         };
 
         var openItem = new System.Windows.Controls.MenuItem

@@ -168,7 +168,8 @@ public partial class MainWindow
                 return;
             }
 
-            for (var index = 0; index < widthValues.Length; index++)
+            // Keep the final column flexible so it always absorbs the table's remaining width.
+            for (var index = 0; index < widthValues.Length - 1; index++)
             {
                 if (double.TryParse(
                         widthValues[index],

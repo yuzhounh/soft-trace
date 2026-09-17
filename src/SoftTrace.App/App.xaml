@@ -109,11 +109,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContextMenu">
-                        <Border Background="{DynamicResource ElevatedSurfaceBrush}"
+                        <Border Margin="16"
+                                Background="{DynamicResource ElevatedSurfaceBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1" CornerRadius="10" Padding="5">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="18" ShadowDepth="5" Opacity="0.16" />
+                                <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Opacity="0.16" Color="#000000" />
                             </Border.Effect>
                             <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
                         </Border>
@@ -149,13 +150,15 @@
                                           Margin="18,0,2,0" VerticalAlignment="Center" Visibility="Collapsed" />
                                 </Grid>
                             </Border>
-                            <Popup x:Name="PART_Popup" Placement="Right" AllowsTransparency="True" Focusable="False"
+                            <Popup x:Name="PART_Popup" Placement="Right" HorizontalOffset="-10" VerticalOffset="-16"
+                                   AllowsTransparency="True" Focusable="False"
                                    IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}">
-                                <Border Background="{DynamicResource ElevatedSurfaceBrush}"
+                                <Border Margin="16"
+                                        Background="{DynamicResource ElevatedSurfaceBrush}"
                                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                         CornerRadius="10" Padding="5">
                                     <Border.Effect>
-                                        <DropShadowEffect BlurRadius="18" ShadowDepth="5" Opacity="0.16" />
+                                        <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Opacity="0.16" Color="#000000" />
                                     </Border.Effect>
                                     <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
                                 </Border>
