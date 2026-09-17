@@ -27,15 +27,14 @@ Soft Trace 是一个轻量级 Windows 软件使用时间追踪工具。它在本
 - 可直接导入 ManicTime 备份 ZIP 或 `ManicTimeReports.db`
 - 导入时合并同一应用的连续记录，并只填补 Soft Trace 尚未覆盖的时间
 
-## 直接运行
+## 下载
 
-发布包位于：
+从 [GitHub Releases](https://github.com/yuzhounh/soft-trace/releases) 下载 Windows x64 版本：
 
-```text
-dist/SoftTrace-v0.2.0-win-x64/SoftTrace.exe
-```
+- `SoftTrace-v0.2.0-win-x64-Setup.exe`：推荐普通用户使用的安装版，提供开始菜单快捷方式、可选桌面快捷方式和标准卸载入口。
+- `SoftTrace-v0.2.0-win-x64-Portable.exe`：绿色便携单文件，无需安装即可运行。
 
-该版本为 Windows x64 自包含程序，不要求另行安装 .NET。关闭主窗口只会隐藏到系统托盘；需要彻底退出时，请右键托盘图标并选择“退出”。
+两个版本均为 Windows x64 自包含程序，不要求另行安装 .NET。关闭主窗口只会隐藏到系统托盘；需要彻底退出时，请右键托盘图标并选择“退出”。卸载安装版时默认保留本地使用记录，也可在卸载提示中选择一并删除。
 
 数据库与运行日志保存在：
 
@@ -60,7 +59,7 @@ Soft Trace 数据优先：导入器会从每条 ManicTime 活动中扣除当前�
 .\build.ps1
 ```
 
-`run.ps1` 使用项目内的 .NET 8 SDK（若存在）启动开发版；`build.ps1` 会运行 Release 构建、测试并生成自包含发布包。
+`run.ps1` 使用项目内的 .NET 8 SDK（若存在）启动开发版；`build.ps1` 会运行 Release 构建、测试，并生成自包含便携版与 Inno Setup 安装包。构建安装包需要 Inno Setup 6。
 
 ## 当前边界
 
