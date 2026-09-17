@@ -1,7 +1,9 @@
 using System.Drawing;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using SoftTrace.Core;
 using Forms = System.Windows.Forms;
 
@@ -105,6 +107,9 @@ public partial class App
         }
     }
 
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
     public void ShowMainWindow()
     {
         if (_mainWindow is null)
@@ -124,6 +129,19 @@ public partial class App
         _mainWindow.Topmost = true;
         _mainWindow.Topmost = false;
         _mainWindow.Focus();
+
+        try
+        {
+            var hwnd = new WindowInteropHelper(_mainWindow).Handle;
+            if (hwnd != IntPtr.Zero)
+            {
+                ShowWindow(hwnd, 9); // SW_RESTORE
+                SetForegroundWindow(hwnd);
+            }
+        }
+        catch
+        {
+        }
     }
 
     public void RequestExit()
