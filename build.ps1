@@ -14,7 +14,7 @@ $version = '0.2.1'
 $runtime = 'win-x64'
 $distDirectory = Join-Path $projectRoot 'dist'
 $publishDirectory = Join-Path $distDirectory "SoftTrace-v$version-$runtime"
-$portableArchive = Join-Path $distDirectory "SoftTrace-v$version-$runtime-Portable.zip"
+$portableExecutable = Join-Path $distDirectory "SoftTrace-v$version-$runtime-Portable.exe"
 $installerScript = Join-Path $projectRoot 'installer\SoftTrace.iss'
 
 & $dotnetCommand restore $solution
@@ -30,8 +30,8 @@ $installerScript = Join-Path $projectRoot 'installer\SoftTrace.iss'
     -p:DebugType=None `
     -p:DebugSymbols=false
 
-Compress-Archive -LiteralPath (Join-Path $publishDirectory 'SoftTrace.exe') `
-    -DestinationPath $portableArchive `
+Copy-Item -LiteralPath (Join-Path $publishDirectory 'SoftTrace.exe') `
+    -Destination $portableExecutable `
     -Force
 
 $innoCandidates = @(
@@ -50,5 +50,5 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $setupExecutable = Join-Path $distDirectory "SoftTrace-v$version-$runtime-Setup.exe"
-Write-Output "Soft Trace v$version portable build: $portableArchive"
+Write-Output "Soft Trace v$version portable build: $portableExecutable"
 Write-Output "Soft Trace v$version installer: $setupExecutable"

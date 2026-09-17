@@ -32,7 +32,7 @@ Soft Trace 是一个轻量级 Windows 软件使用时间追踪工具。它在本
 从 [GitHub Releases](https://github.com/yuzhounh/soft-trace/releases) 下载 Windows x64 版本：
 
 - `SoftTrace-v0.2.1-win-x64-Setup.exe`：推荐普通用户使用的安装版，提供开始菜单快捷方式、可选桌面快捷方式和标准卸载入口。
-- `SoftTrace-v0.2.1-win-x64-Portable.zip`：绿色便携版，解压后运行 `SoftTrace.exe`，无需安装。
+- `SoftTrace-v0.2.1-win-x64-Portable.exe`：绿色便携单文件，无需安装即可运行。
 
 两个版本均为 Windows x64 自包含程序，不要求另行安装 .NET。关闭主窗口只会隐藏到系统托盘；需要彻底退出时，请右键托盘图标并选择“退出”。卸载安装版时默认保留本地使用记录，也可在卸载提示中选择一并删除。
 
