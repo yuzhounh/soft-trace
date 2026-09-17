@@ -1,6 +1,12 @@
-# SoftTrace
+<p align="center">
+  <img src="src/SoftTrace.App/Assets/SoftTrace-Source.png" width="112" alt="Soft Trace 图标" />
+</p>
 
-SoftTrace 是一个轻量级 Windows 软件使用时间追踪工具。它在本地记录当前前台软件，并按日期汇总使用时长。
+<h1 align="center">Soft Trace</h1>
+
+<p align="center"><strong>软件使用时间，一目了然。</strong></p>
+
+Soft Trace 是一个轻量级 Windows 软件使用时间追踪工具。它在本地记录当前前台软件，并按日期汇总使用时长。
 
 ## v0.2 功能
 
@@ -19,7 +25,7 @@ SoftTrace 是一个轻量级 Windows 软件使用时间追踪工具。它在本�
 - 同步区间使用稳定 `sync_id` 去重，重复拉取不会重复累计
 - Firebase 刷新令牌使用当前 Windows 用户的 DPAPI 加密保存
 - 可直接导入 ManicTime 备份 ZIP 或 `ManicTimeReports.db`
-- 导入时合并同一应用的连续记录，并只填补 SoftTrace 尚未覆盖的时间
+- 导入时合并同一应用的连续记录，并只填补 Soft Trace 尚未覆盖的时间
 
 ## 直接运行
 
@@ -45,7 +51,7 @@ SQLite 始终是本机采集的权威副本；断网期间继续记录，联网�
 
 点击主窗口右上角的“导入 ManicTime”，选择 ManicTime 生成的备份 ZIP 或解压后的 `ManicTimeReports.db`。导入记录归到当前电脑，并参与正常的本地统计与云同步。
 
-SoftTrace 数据优先：导入器会从每条 ManicTime 活动中扣除当前电脑已有记录覆盖的时间，完全重叠的记录跳过，部分重叠的记录只保留未覆盖部分。导入 ID 是稳定的，因此重复选择同一备份不会重复累计。
+Soft Trace 数据优先：导入器会从每条 ManicTime 活动中扣除当前电脑已有记录覆盖的时间，完全重叠的记录跳过，部分重叠的记录只保留未覆盖部分。导入 ID 是稳定的，因此重复选择同一备份不会重复累计。
 
 ## 开发与验证
 
