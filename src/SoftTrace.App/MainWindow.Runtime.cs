@@ -5,6 +5,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using SoftTrace.Core;
 
 namespace SoftTrace.App;
@@ -574,7 +575,7 @@ public partial class MainWindow
             return;
         }
 
-        CurrentAppIcon.Source = GetApplicationIcon(currentApp.ProcessName, currentApp.ExecutablePath);
+        CurrentAppIcon.Source = GetApplicationIcon(currentApp.ProcessName, currentApp.ExecutablePath, currentApp.AppName);
         CurrentAppNameText.Text = currentApp.AppName;
         CurrentAppBadge.Visibility = Visibility.Visible;
     }
@@ -613,7 +614,7 @@ public partial class MainWindow
             _allUsageRows.Add(new UsageDisplayRow(
                 row.AppName,
                 row.ProcessName,
-                GetApplicationIcon(row.ProcessName, row.ExecutablePath),
+                GetApplicationIcon(row.ProcessName, row.ExecutablePath, row.AppName),
                 FormatDuration(row.Duration),
                 durationSeconds,
                 $"{shareRatio:P1}",
@@ -1125,42 +1126,125 @@ public partial class MainWindow
         return $"{Math.Max(0, (int)duration.TotalSeconds)} 秒";
     }
 
-    private ImageSource GetApplicationIcon(string processName, string? executablePath)
+    private readonly string _iconCacheDirectory = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "SoftTrace", "Icons");
+
+    private ImageSource GetApplicationIcon(string processName, string? executablePath, string? appName = null)
     {
-        var cacheKey = executablePath ?? processName;
+        var cacheKey = string.IsNullOrWhiteSpace(processName) ? (executablePath ?? "unknown") : processName;
         if (_iconCache.TryGetValue(cacheKey, out var cachedIcon))
         {
             return cachedIcon;
         }
 
-        var resolvedPath = ResolveExecutablePath(processName, executablePath);
-        System.Drawing.Icon icon;
+        // 1. Check persistent disk icon cache
         try
         {
-            icon = !string.IsNullOrWhiteSpace(resolvedPath) && File.Exists(resolvedPath)
-                ? System.Drawing.Icon.ExtractAssociatedIcon(resolvedPath)
-                    ?? (System.Drawing.Icon)System.Drawing.SystemIcons.Application.Clone()
-                : (System.Drawing.Icon)System.Drawing.SystemIcons.Application.Clone();
+            var diskCachePath = Path.Combine(_iconCacheDirectory, $"{SanitizeFileName(cacheKey)}.png");
+            if (File.Exists(diskCachePath))
+            {
+                var diskImage = LoadBitmapFromPath(diskCachePath);
+                if (diskImage is not null)
+                {
+                    _iconCache[cacheKey] = diskImage;
+                    return diskImage;
+                }
+            }
         }
         catch
         {
-            icon = (System.Drawing.Icon)System.Drawing.SystemIcons.Application.Clone();
         }
 
-        using (icon)
+        // 2. Check bundled known icons for uninstalled or legacy applications
+        var knownIcon = LoadKnownBundledIcon(processName, appName);
+        if (knownIcon is not null)
         {
-            var image = Imaging.CreateBitmapSourceFromHIcon(
-                icon.Handle,
-                Int32Rect.Empty,
-                BitmapSizeOptions.FromWidthAndHeight(20, 20));
-            image.Freeze();
-            _iconCache[cacheKey] = image;
-            return image;
+            _iconCache[cacheKey] = knownIcon;
+            SaveIconToDiskCache(cacheKey, knownIcon);
+            return knownIcon;
         }
+
+        // 3. Resolve executable path on disk (parent version dir, App Paths, UWP AppModel, Uninstall, Start Menu)
+        var resolvedPath = ResolveExecutablePath(processName, executablePath, appName);
+        if (!string.IsNullOrWhiteSpace(resolvedPath) && File.Exists(resolvedPath))
+        {
+            try
+            {
+                System.Drawing.Icon? icon = null;
+                if (resolvedPath.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
+                {
+                    icon = new System.Drawing.Icon(resolvedPath, 32, 32);
+                }
+                else
+                {
+                    icon = System.Drawing.Icon.ExtractAssociatedIcon(resolvedPath);
+                }
+
+                if (icon is not null)
+                {
+                    using (icon)
+                    {
+                        var image = Imaging.CreateBitmapSourceFromHIcon(
+                            icon.Handle,
+                            Int32Rect.Empty,
+                            BitmapSizeOptions.FromWidthAndHeight(20, 20));
+                        image.Freeze();
+                        _iconCache[cacheKey] = image;
+                        SaveIconToDiskCache(cacheKey, image);
+                        return image;
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        // 4. Fallback badge: crisp, modern rounded-square brand avatar with initial letter
+        var fallbackBadge = GenerateLetterBadge(appName ?? processName);
+        _iconCache[cacheKey] = fallbackBadge;
+        return fallbackBadge;
     }
 
-    private static string? ResolveExecutablePath(string processName, string? executablePath)
+    private static ImageSource? LoadKnownBundledIcon(string processName, string? appName)
     {
+        try
+        {
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            string? candidateFile = null;
+
+            var procLower = processName.ToLowerInvariant();
+            var appLower = (appName ?? string.Empty).ToLowerInvariant();
+
+            if (procLower.Contains("todesk") || appLower.Contains("todesk"))
+            {
+                candidateFile = Path.Combine(appDir, "Assets", "KnownIcons", "todesk.png");
+            }
+            else if (procLower.Contains("awesun") || appLower.Contains("向日葵") || appLower.Contains("awesun"))
+            {
+                candidateFile = Path.Combine(appDir, "Assets", "KnownIcons", "awesun.png");
+            }
+            else if (procLower.Contains("clash") && (procLower.Contains("windows") || !procLower.Contains("verge")))
+            {
+                candidateFile = Path.Combine(appDir, "Assets", "KnownIcons", "clash.png");
+            }
+
+            if (!string.IsNullOrWhiteSpace(candidateFile) && File.Exists(candidateFile))
+            {
+                return LoadBitmapFromPath(candidateFile);
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
+    }
+
+    private static string? ResolveExecutablePath(string processName, string? executablePath, string? appName)
+    {
+        // 1. Direct path check
         if (!string.IsNullOrWhiteSpace(executablePath) && File.Exists(executablePath))
         {
             return executablePath;
@@ -1175,7 +1259,93 @@ public partial class MainWindow
             ? processName
             : $"{processName}.exe";
 
-        // 1. Check %LOCALAPPDATA%\Microsoft\WindowsApps\<ProcessName>.exe (UWP execution aliases)
+        var procLower = processName.ToLowerInvariant();
+        var systemRoot = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+        // 2. Special process mappings
+        if (procLower is "searchhost" or "shellexperiencehost" or "startmenuexperiencehost" or "shellhost" or "lockapp")
+        {
+            var explorerPath = Path.Combine(systemRoot, "explorer.exe");
+            if (File.Exists(explorerPath))
+            {
+                return explorerPath;
+            }
+        }
+
+        if (procLower.Contains("wechatappex"))
+        {
+            var wechatPath = @"C:\Program Files\Tencent\Weixin\Weixin.exe";
+            if (File.Exists(wechatPath))
+            {
+                return wechatPath;
+            }
+        }
+
+        if (procLower.Contains("clash"))
+        {
+            var clashVerge = @"C:\Program Files\Clash Verge\clash-verge.exe";
+            if (File.Exists(clashVerge))
+            {
+                return clashVerge;
+            }
+        }
+
+        if (procLower.Contains("qoder"))
+        {
+            var qoderLocal = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Programs", "Qoder", "Qoder.exe");
+            if (File.Exists(qoderLocal))
+            {
+                return qoderLocal;
+            }
+        }
+
+        // 3. Parent / Ancestor directory scanning (for updated version folders like WPS, MATLAB, RadiumWMPF)
+        if (!string.IsNullOrWhiteSpace(executablePath))
+        {
+            try
+            {
+                var current = Path.GetDirectoryName(executablePath);
+                for (var depth = 0; depth < 3 && !string.IsNullOrWhiteSpace(current); depth++)
+                {
+                    current = Path.GetDirectoryName(current);
+                    if (!string.IsNullOrWhiteSpace(current) && Directory.Exists(current) && current.Length > 8)
+                    {
+                        var match = Directory.EnumerateFiles(current, exeName, new EnumerationOptions
+                        {
+                            RecurseSubdirectories = true,
+                            MaxRecursionDepth = 3,
+                            IgnoreInaccessible = true
+                        }).FirstOrDefault();
+
+                        if (!string.IsNullOrWhiteSpace(match) && File.Exists(match))
+                        {
+                            return match;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        // 4. Registry App Paths (e.g. wps.exe, chrome.exe)
+        var appPath = QueryRegistryAppPath(exeName);
+        if (!string.IsNullOrWhiteSpace(appPath) && File.Exists(appPath))
+        {
+            return appPath;
+        }
+
+        // 5. UWP / AppX Package Repository in Registry (Photos, Media Player, Phone Link, Armoury Crate, Codex)
+        var uwpPath = QueryUwpPackagePath(processName, executablePath, appName);
+        if (!string.IsNullOrWhiteSpace(uwpPath) && File.Exists(uwpPath))
+        {
+            return uwpPath;
+        }
+
+        // 6. WindowsApps execution alias
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var windowsAppAlias = Path.Combine(localAppData, "Microsoft", "WindowsApps", exeName);
         if (File.Exists(windowsAppAlias))
@@ -1183,45 +1353,354 @@ public partial class MainWindow
             return windowsAppAlias;
         }
 
-        // 2. Check %SystemRoot%\System32\<ProcessName>.exe
-        var systemRoot = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        // 7. System32 / Windows standard directories
         var system32Exe = Path.Combine(systemRoot, "System32", exeName);
         if (File.Exists(system32Exe))
         {
             return system32Exe;
         }
 
-        // 3. Special check for explorer.exe
-        if (string.Equals(processName, "explorer", StringComparison.OrdinalIgnoreCase))
+        var winExe = Path.Combine(systemRoot, exeName);
+        if (File.Exists(winExe))
         {
-            var explorerExe = Path.Combine(systemRoot, "explorer.exe");
-            if (File.Exists(explorerExe))
-            {
-                return explorerExe;
-            }
+            return winExe;
         }
 
-        // 4. Check %ProgramFiles%\WindowsApps (e.g. Notepad, Calculator)
+        // 8. Registry Uninstall entries (MATLAB, Qoder, etc.)
+        var uninstallIcon = QueryRegistryUninstallIcon(processName, appName);
+        if (!string.IsNullOrWhiteSpace(uninstallIcon) && File.Exists(uninstallIcon))
+        {
+            return uninstallIcon;
+        }
+
+        // 9. Start Menu Shortcuts
+        var shortcutTarget = QueryStartMenuShortcut(processName, appName);
+        if (!string.IsNullOrWhiteSpace(shortcutTarget) && File.Exists(shortcutTarget))
+        {
+            return shortcutTarget;
+        }
+
+        return null;
+    }
+
+    private static string? QueryRegistryAppPath(string exeName)
+    {
+        var roots = new[] { Registry.CurrentUser, Registry.LocalMachine };
+        foreach (var root in roots)
+        {
+            try
+            {
+                using var key = root.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{exeName}");
+                if (key?.GetValue(string.Empty) is string path)
+                {
+                    path = path.Trim('"');
+                    if (File.Exists(path))
+                    {
+                        return path;
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+        return null;
+    }
+
+    private static string? QueryUwpPackagePath(string processName, string? executablePath, string? appName)
+    {
         try
         {
-            var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            var windowsAppsDir = Path.Combine(programFiles, "WindowsApps");
-            if (Directory.Exists(windowsAppsDir))
+            string? packagePrefix = null;
+            if (!string.IsNullOrWhiteSpace(executablePath))
             {
-                var candidate = Directory.EnumerateFiles(windowsAppsDir, exeName, SearchOption.AllDirectories)
-                    .FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(candidate) && File.Exists(candidate))
+                var match = System.Text.RegularExpressions.Regex.Match(executablePath, @"WindowsApps\\([^\._]+)");
+                if (match.Success)
                 {
-                    return candidate;
+                    packagePrefix = match.Groups[1].Value;
+                }
+            }
+
+            var keys = new[]
+            {
+                (Registry.CurrentUser, @"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages"),
+                (Registry.LocalMachine, @"SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\PackageRepository\Packages")
+            };
+
+            foreach (var (root, subKey) in keys)
+            {
+                using var key = root.OpenSubKey(subKey);
+                if (key is null)
+                {
+                    continue;
+                }
+
+                foreach (var pkgName in key.GetSubKeyNames())
+                {
+                    var matchesPrefix = packagePrefix != null && pkgName.StartsWith(packagePrefix, StringComparison.OrdinalIgnoreCase);
+                    var matchesProc = pkgName.Contains(processName, StringComparison.OrdinalIgnoreCase);
+                    var matchesApp = !string.IsNullOrWhiteSpace(appName) && pkgName.Contains(appName, StringComparison.OrdinalIgnoreCase);
+
+                    if (matchesPrefix || matchesProc || matchesApp)
+                    {
+                        using var pkgKey = key.OpenSubKey(pkgName);
+                        if (pkgKey?.GetValue("PackageRootFolder") is string rootFolder && Directory.Exists(rootFolder))
+                        {
+                            var exeName = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                                ? processName
+                                : $"{processName}.exe";
+
+                            var candidate = Path.Combine(rootFolder, exeName);
+                            if (File.Exists(candidate))
+                            {
+                                return candidate;
+                            }
+
+                            var appCandidate = Path.Combine(rootFolder, "app", exeName);
+                            if (File.Exists(appCandidate))
+                            {
+                                return appCandidate;
+                            }
+
+                            // Check for any .ico or matching .exe in rootFolder
+                            foreach (var file in Directory.EnumerateFiles(rootFolder, "*.*", SearchOption.TopDirectoryOnly))
+                            {
+                                if (file.EndsWith(".ico", StringComparison.OrdinalIgnoreCase) ||
+                                    file.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    return file;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
         catch
         {
-            // Security or access restrictions to WindowsApps should safely fall back
         }
 
         return null;
+    }
+
+    private static string? QueryRegistryUninstallIcon(string processName, string? appName)
+    {
+        var keys = new[]
+        {
+            (Registry.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+            (Registry.LocalMachine, @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+            (Registry.CurrentUser, @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
+        };
+
+        var searchTerms = new List<string> { processName };
+        if (!string.IsNullOrWhiteSpace(appName))
+        {
+            searchTerms.Add(appName);
+        }
+
+        foreach (var (root, subKey) in keys)
+        {
+            try
+            {
+                using var key = root.OpenSubKey(subKey);
+                if (key is null)
+                {
+                    continue;
+                }
+
+                foreach (var name in key.GetSubKeyNames())
+                {
+                    using var appKey = key.OpenSubKey(name);
+                    if (appKey is null)
+                    {
+                        continue;
+                    }
+
+                    var dispName = appKey.GetValue("DisplayName") as string ?? string.Empty;
+                    var combined = $"{dispName} {name}";
+
+                    if (searchTerms.Any(t => combined.Contains(t, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        var iconPath = appKey.GetValue("DisplayIcon") as string;
+                        if (!string.IsNullOrWhiteSpace(iconPath))
+                        {
+                            var clean = iconPath.Split(',')[0].Trim('"');
+                            if (File.Exists(clean))
+                            {
+                                return clean;
+                            }
+                        }
+
+                        var installLoc = appKey.GetValue("InstallLocation") as string;
+                        if (!string.IsNullOrWhiteSpace(installLoc))
+                        {
+                            var cleanLoc = installLoc.Trim('"');
+                            if (Directory.Exists(cleanLoc))
+                            {
+                                var exe = Path.Combine(cleanLoc, $"{processName}.exe");
+                                if (File.Exists(exe))
+                                {
+                                    return exe;
+                                }
+
+                                var win64Exe = Path.Combine(cleanLoc, "bin", "win64", $"{processName}.exe");
+                                if (File.Exists(win64Exe))
+                                {
+                                    return win64Exe;
+                                }
+
+                                var binExe = Path.Combine(cleanLoc, "bin", $"{processName}.exe");
+                                if (File.Exists(binExe))
+                                {
+                                    return binExe;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+        return null;
+    }
+
+    private static string? QueryStartMenuShortcut(string processName, string? appName)
+    {
+        var dirs = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Microsoft\Windows\Start Menu\Programs")
+        };
+
+        var searchTerms = new List<string> { processName };
+        if (!string.IsNullOrWhiteSpace(appName))
+        {
+            searchTerms.Add(appName);
+        }
+
+        foreach (var dir in dirs)
+        {
+            if (!Directory.Exists(dir))
+            {
+                continue;
+            }
+
+            try
+            {
+                foreach (var lnk in Directory.EnumerateFiles(dir, "*.lnk", SearchOption.AllDirectories))
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(lnk);
+                    if (searchTerms.Any(t => fileName.Contains(t, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return lnk;
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        return null;
+    }
+
+    private void SaveIconToDiskCache(string cacheKey, ImageSource image)
+    {
+        try
+        {
+            if (!Directory.Exists(_iconCacheDirectory))
+            {
+                Directory.CreateDirectory(_iconCacheDirectory);
+            }
+
+            var filePath = Path.Combine(_iconCacheDirectory, $"{SanitizeFileName(cacheKey)}.png");
+            if (File.Exists(filePath))
+            {
+                return;
+            }
+
+            if (image is BitmapSource bitmapSource)
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+                using var stream = File.Create(filePath);
+                encoder.Save(stream);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private static BitmapImage? LoadBitmapFromPath(string path)
+    {
+        try
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(path, UriKind.Absolute);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        return string.Concat(name.Select(c => invalid.Contains(c) ? '_' : c)).ToLowerInvariant();
+    }
+
+    private static ImageSource GenerateLetterBadge(string text)
+    {
+        const int size = 20;
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            var hash = Math.Abs(text.GetHashCode());
+            var colors = new[]
+            {
+                Color.FromRgb(0x4F, 0x46, 0xE5), // Indigo
+                Color.FromRgb(0x02, 0x84, 0xC7), // Sky blue
+                Color.FromRgb(0x0D, 0x94, 0x88), // Teal
+                Color.FromRgb(0x16, 0xA3, 0x4A), // Green
+                Color.FromRgb(0xD9, 0x77, 0x06), // Amber
+                Color.FromRgb(0xEA, 0x58, 0x0C), // Orange
+                Color.FromRgb(0xDC, 0x26, 0x26), // Red
+                Color.FromRgb(0x93, 0x33, 0xEA), // Purple
+                Color.FromRgb(0xDB, 0x27, 0x77), // Pink
+                Color.FromRgb(0x47, 0x55, 0x69)  // Slate
+            };
+            var bgColor = colors[hash % colors.Length];
+            dc.DrawRoundedRectangle(new SolidColorBrush(bgColor), null, new Rect(0, 0, size, size), 5, 5);
+
+            var letter = string.IsNullOrWhiteSpace(text) ? "?" : text.Trim()[0].ToString().ToUpperInvariant();
+            var formattedText = new FormattedText(
+                letter,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface(new FontFamily("Segoe UI, Microsoft YaHei"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
+                11,
+                Brushes.White,
+                1.0);
+
+            var x = (size - formattedText.Width) / 2.0;
+            var y = (size - formattedText.Height) / 2.0;
+            dc.DrawText(formattedText, new Point(Math.Max(0, x), Math.Max(0, y)));
+        }
+
+        var rtb = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
+        rtb.Render(dv);
+        rtb.Freeze();
+        return rtb;
     }
 
     public sealed record UsageDisplayRow(

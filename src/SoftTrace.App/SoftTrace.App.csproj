@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\SoftTrace.ico" />
-    <None Update="Assets\SoftTrace.ico">
+    <None Update="Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
