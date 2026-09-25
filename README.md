@@ -8,6 +8,10 @@
 
 Soft Trace 是一个轻量级 Windows 软件使用时间追踪工具。它在本地记录当前前台软件，并按日期汇总使用时长。
 
+<p align="center">
+  <img src="screenshots/ss_1.png" width="800" alt="Soft Trace 界面截图" />
+</p>
+
 ## v0.2 功能
 
 - 自动识别当前前台软件（不记录网页、窗口标题或键盘内容）
@@ -59,7 +63,7 @@ Soft Trace 数据优先：导入器会从每条 ManicTime 活动中扣除当前�
 .\build.ps1
 ```
 
-`run.ps1` 使用项目内的 .NET 8 SDK（若存在）启动开发版；`build.ps1` 会运行 Release 构建、测试，并生成自包含便携版与 Inno Setup 安装包。构建安装包需要 Inno Setup 6。
+`run.ps1` 使用系统级 .NET 10 SDK 启动开发版；`build.ps1` 会运行 Release 构建、测试，并生成自包含便携版与 Inno Setup 安装包。构建安装包需要 Inno Setup 6。
 
 ## 当前边界
 
