@@ -6,13 +6,17 @@
 
 <p align="center"><strong>软件使用时间，一目了然。</strong></p>
 
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-f59e0b.svg" alt="License: MIT"></a>
+</p>
+
 Soft Trace 是一个轻量级 Windows 软件使用时间追踪工具。它在本地记录当前前台软件，并按日期汇总使用时长。
 
 <p align="center">
   <img src="screenshots/ss_1.png" width="800" alt="Soft Trace 界面截图" />
 </p>
 
-## v0.2 功能
+## 亮点特性 (Features)
 
 - 自动识别当前前台软件（不记录网页、窗口标题或键盘内容）
 - 从可执行文件提取软件图标，以紧凑排行显示
@@ -59,6 +63,8 @@ Soft Trace 数据优先：导入器会从每条 ManicTime 活动中扣除当前�
 ## 开发与验证
 
 ```powershell
+git clone https://github.com/yuzhounh/soft-trace.git
+cd soft-trace
 .\run.ps1
 .\build.ps1
 ```
@@ -68,3 +74,12 @@ Soft Trace 数据优先：导入器会从每条 ManicTime 活动中扣除当前�
 ## 当前边界
 
 v0.2 专注于可靠采集、软件排行、ManicTime 历史导入和 Firebase 多设备同步，暂不包含每日时间轴、开机自启或 CSV 导出。这些能力会在后续版本中逐步加入。
+
+## 相关项目
+
+- [timelens-chrome-extension](https://github.com/yuzhounh/timelens-chrome-extension)：统计浏览器中的网站访问时间，可与软件使用统计互补。
+- [focus-pace](https://github.com/yuzhounh/focus-pace)：管理专注与休息节奏的 Windows 工具。
+
+## 开源协议 (License)
+
+本项目采用 [MIT 许可证](LICENSE)。
