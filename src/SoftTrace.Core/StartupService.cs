@@ -32,8 +32,8 @@ public sealed class StartupService
             var entryAssembly = Environment.GetCommandLineArgs().FirstOrDefault();
             var command = string.Equals(Path.GetFileNameWithoutExtension(executable), "dotnet", StringComparison.OrdinalIgnoreCase)
                           && !string.IsNullOrWhiteSpace(entryAssembly)
-                ? $"\"{executable}\" \"{entryAssembly}\""
-                : $"\"{executable}\"";
+                ? $"\"{executable}\" \"{entryAssembly}\" --background"
+                : $"\"{executable}\" --background";
             key.SetValue(ValueName, command, RegistryValueKind.String);
         }
         else

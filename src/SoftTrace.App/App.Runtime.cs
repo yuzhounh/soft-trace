@@ -27,6 +27,7 @@ public partial class App
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        var startInBackground = e.Args.Contains("--background", StringComparer.OrdinalIgnoreCase);
 
         _singleInstanceMutex = new Mutex(true, "SoftTrace.SingleInstance", out var createdNew);
         if (!createdNew)
@@ -87,13 +88,20 @@ public partial class App
             _mainWindow = new MainWindow(store, _capture, _syncCoordinator);
             MainWindow = _mainWindow;
             CreateTrayIcon();
-            _mainWindow.Show();
-            _mainWindow.WindowState = WindowState.Normal;
-            _mainWindow.Activate();
-            _mainWindow.Topmost = true;
-            _mainWindow.Topmost = false;
-            _mainWindow.Focus();
-            Log("Main window shown.");
+            if (startInBackground)
+            {
+                Log("Started in background mode.");
+            }
+            else
+            {
+                _mainWindow.Show();
+                _mainWindow.WindowState = WindowState.Normal;
+                _mainWindow.Activate();
+                _mainWindow.Topmost = true;
+                _mainWindow.Topmost = false;
+                _mainWindow.Focus();
+                Log("Main window shown.");
+            }
         }
         catch (Exception exception)
         {
@@ -129,6 +137,7 @@ public partial class App
         _mainWindow.Topmost = true;
         _mainWindow.Topmost = false;
         _mainWindow.Focus();
+        _mainWindow.NotifyShown();
 
         try
         {

@@ -1,5 +1,5 @@
 #define MyAppName "Soft Trace"
-#define MyAppVersion "0.2.1"
+#define MyAppVersion "0.3.0"
 #define MyAppPublisher "Jing Wang"
 #define MyAppURL "https://github.com/yuzhounh/soft-trace"
 #define MyAppExeName "SoftTrace.exe"
@@ -29,7 +29,7 @@ WizardStyle=modern
 CloseApplications=yes
 CloseApplicationsFilter={#MyAppExeName}
 RestartApplications=no
-VersionInfoVersion=0.2.1.0
+VersionInfoVersion=0.3.0.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} installer
 VersionInfoProductName={#MyAppName}

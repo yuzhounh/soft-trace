@@ -1,16 +1,11 @@
 $ErrorActionPreference = 'Stop'
 
 $projectRoot = $PSScriptRoot
-$localDotnet = Join-Path $projectRoot '.tools\dotnet\dotnet.exe'
-$dotnetCommand = if (Test-Path -LiteralPath $localDotnet) {
-    $localDotnet
-} else {
-    (Get-Command dotnet -ErrorAction Stop).Source
-}
+$dotnetCommand = (Get-Command dotnet -ErrorAction Stop).Source
 $solution = Join-Path $projectRoot 'SoftTrace.sln'
 $testProject = Join-Path $projectRoot 'tests\SoftTrace.Core.Tests\SoftTrace.Core.Tests.csproj'
 $appProject = Join-Path $projectRoot 'src\SoftTrace.App\SoftTrace.App.csproj'
-$version = '0.2.1'
+$version = '0.3.0'
 $runtime = 'win-x64'
 $distDirectory = Join-Path $projectRoot 'dist'
 $publishDirectory = Join-Path $distDirectory "SoftTrace-v$version-$runtime"

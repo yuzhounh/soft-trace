@@ -12,3 +12,4 @@ TestResults/
 *.db-wal
 firebase-oauth-secret.txt
 firebase-oauth-client.json
+*.log

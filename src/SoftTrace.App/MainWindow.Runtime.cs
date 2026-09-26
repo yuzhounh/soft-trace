@@ -62,6 +62,7 @@ public partial class MainWindow
         Closing += OnClosing;
         SizeChanged += MainWindow_OnSizeChanged;
         IsVisibleChanged += OnIsVisibleChanged;
+        Activated += MainWindow_OnActivated;
     }
 
     public ObservableCollection<UsageDisplayRow> UsageRows { get; } = [];
@@ -73,6 +74,7 @@ public partial class MainWindow
         await RestoreUsageColumnWidthsAsync();
         _initialized = true;
         await RefreshDeviceFiltersAsync();
+        await SyncPeriodDatesIfDynamicAsync();
         await RefreshUsageAsync(resetPage: true);
         _refreshTimer.Start();
         UpdateCaptureStatus(_capture?.CurrentStatus ?? new CaptureStatus(false, false, null));
@@ -286,7 +288,8 @@ public partial class MainWindow
         if (IsVisible)
         {
             _refreshTimer.Start();
-            await RefreshUsageAsync();
+            var datesChanged = await SyncPeriodDatesIfDynamicAsync();
+            await RefreshUsageAsync(resetPage: datesChanged);
         }
         else
         {
@@ -295,7 +298,36 @@ public partial class MainWindow
         }
     }
 
-    private async void RefreshTimer_OnTick(object? sender, EventArgs e) => await RefreshUsageAsync();
+    private async void MainWindow_OnActivated(object? sender, EventArgs e)
+    {
+        if (!_initialized)
+        {
+            return;
+        }
+
+        var datesChanged = await SyncPeriodDatesIfDynamicAsync();
+        if (datesChanged)
+        {
+            await RefreshUsageAsync(resetPage: true);
+        }
+    }
+
+    public async void NotifyShown()
+    {
+        if (!_initialized)
+        {
+            return;
+        }
+
+        var datesChanged = await SyncPeriodDatesIfDynamicAsync();
+        await RefreshUsageAsync(resetPage: datesChanged);
+    }
+
+    private async void RefreshTimer_OnTick(object? sender, EventArgs e)
+    {
+        var datesChanged = await SyncPeriodDatesIfDynamicAsync();
+        await RefreshUsageAsync(resetPage: datesChanged);
+    }
 
     private void CaptureOnStatusChanged(object? sender, CaptureStatus status) =>
         Dispatcher.BeginInvoke(() => UpdateCaptureStatus(status));
@@ -824,6 +856,31 @@ public partial class MainWindow
             return;
         }
 
+        var range = await CalculatePeriodDateRangeAsync(period);
+        if (range is not null)
+        {
+            _applyingPeriod = true;
+            try
+            {
+                FromDatePicker.SelectedDate = range.Value.FromDate;
+                ToDatePicker.SelectedDate = range.Value.ToDate;
+            }
+            finally
+            {
+                _applyingPeriod = false;
+            }
+        }
+
+        await RefreshUsageAsync(resetPage: true);
+    }
+
+    private async Task<(DateTime FromDate, DateTime ToDate)?> CalculatePeriodDateRangeAsync(string period)
+    {
+        if (string.Equals(period, "Custom", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
         var today = DateTime.Today;
         var toDate = today;
         DateTime fromDate;
@@ -860,26 +917,55 @@ public partial class MainWindow
                 fromDate = today.AddYears(-1).AddDays(1);
                 break;
             case "All":
-                var earliestUtc = await _store.GetEarliestActivityUtcAsync(
-                    string.IsNullOrWhiteSpace(_selectedDeviceId) ? null : _selectedDeviceId);
+                var earliestUtc = _store is not null
+                    ? await _store.GetEarliestActivityUtcAsync(
+                        string.IsNullOrWhiteSpace(_selectedDeviceId) ? null : _selectedDeviceId)
+                    : null;
                 fromDate = earliestUtc?.ToLocalTime().Date ?? today;
                 break;
+            case "Today":
             default:
                 fromDate = today;
                 break;
         }
 
+        return (fromDate, toDate);
+    }
+
+    private async Task<bool> SyncPeriodDatesIfDynamicAsync()
+    {
+        if (!_initialized || _applyingPeriod ||
+            PeriodComboBox.SelectedItem is not System.Windows.Controls.ComboBoxItem selectedItem ||
+            selectedItem.Tag is not string period)
+        {
+            return false;
+        }
+
+        var range = await CalculatePeriodDateRangeAsync(period);
+        if (range is null)
+        {
+            return false;
+        }
+
+        var (expectedFrom, expectedTo) = range.Value;
+        if (FromDatePicker.SelectedDate?.Date == expectedFrom.Date &&
+            ToDatePicker.SelectedDate?.Date == expectedTo.Date)
+        {
+            return false;
+        }
+
         _applyingPeriod = true;
         try
         {
-            FromDatePicker.SelectedDate = fromDate;
-            ToDatePicker.SelectedDate = toDate;
+            FromDatePicker.SelectedDate = expectedFrom;
+            ToDatePicker.SelectedDate = expectedTo;
         }
         finally
         {
             _applyingPeriod = false;
         }
-        await RefreshUsageAsync(resetPage: true);
+
+        return true;
     }
 
     private async void DatePicker_OnSelectedDateChanged(
