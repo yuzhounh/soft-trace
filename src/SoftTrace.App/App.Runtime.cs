@@ -27,6 +27,11 @@ public partial class App
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            Log($"Unhandled AppDomain exception: {args.ExceptionObject}");
+        DispatcherUnhandledException += (_, args) =>
+            Log($"Unhandled Dispatcher exception: {args.Exception}");
+
         var startInBackground = e.Args.Contains("--background", StringComparer.OrdinalIgnoreCase);
 
         _singleInstanceMutex = new Mutex(true, "SoftTrace.SingleInstance", out var createdNew);
