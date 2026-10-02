@@ -75,6 +75,9 @@ public partial class App
             const int idleMinutes = 3;
             await store.SetIdleThresholdMinutesAsync(idleMinutes);
             _capture = new ActivityCaptureService(store, device.Id, device.Name, idleMinutes);
+            _capture.CaptureFailed += (_, exception) => Log($"Capture failed: {exception}");
+            _capture.StatusChanged += (_, status) =>
+                Dispatcher.BeginInvoke(() => UpdateTrayCaptureStatus(status));
             _capture.Start();
             Log("Capture service started.");
 
@@ -189,6 +192,7 @@ public partial class App
     private readonly StartupService _startupService = new();
     private System.Windows.Controls.ContextMenu? _trayContextMenu;
     private System.Windows.Controls.MenuItem? _autoStartTrayMenuItem;
+    private System.Windows.Controls.MenuItem? _pauseCaptureTrayMenuItem;
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(IntPtr windowHandle);
@@ -211,6 +215,19 @@ public partial class App
         _trayContextMenu.Items.Add(openItem);
 
         _trayContextMenu.Items.Add(new System.Windows.Controls.Separator());
+
+        _pauseCaptureTrayMenuItem = new System.Windows.Controls.MenuItem
+        {
+            Header = "暂停记录"
+        };
+        _pauseCaptureTrayMenuItem.Click += async (_, _) =>
+        {
+            if (_capture is not null)
+            {
+                await _capture.SetPausedAsync(!_capture.IsPaused);
+            }
+        };
+        _trayContextMenu.Items.Add(_pauseCaptureTrayMenuItem);
 
         _autoStartTrayMenuItem = new System.Windows.Controls.MenuItem
         {
@@ -290,6 +307,10 @@ public partial class App
             Icon = _trayIconImage,
             Visible = true
         };
+        if (_capture is not null)
+        {
+            UpdateTrayCaptureStatus(_capture.CurrentStatus);
+        }
 
         _trayIcon.MouseUp += (_, e) =>
         {
@@ -322,6 +343,22 @@ public partial class App
                 });
             }
         };
+    }
+
+    private void UpdateTrayCaptureStatus(CaptureStatus status)
+    {
+        if (_pauseCaptureTrayMenuItem is not null)
+        {
+            _pauseCaptureTrayMenuItem.Header = status.IsPaused ? "继续记录" : "暂停记录";
+        }
+        if (_trayIcon is not null)
+        {
+            _trayIcon.Text = status.Error is not null
+                ? "SoftTrace 记录失败，已暂停；请打开窗口查看"
+                : status.IsPaused ? "SoftTrace 已暂停记录"
+                : status.IsIdle ? "SoftTrace Idle，不计时"
+                : "SoftTrace 正在记录软件使用时间";
+        }
     }
 
     private void Log(string message)

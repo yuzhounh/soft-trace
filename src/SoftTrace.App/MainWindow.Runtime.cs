@@ -594,7 +594,14 @@ public partial class MainWindow
 
     private void UpdateCaptureStatus(CaptureStatus status)
     {
-        if (status.IsPaused)
+        CaptureStateText.ToolTip = status.Error is not null
+            ? $"{status.Error}\n解决问题后，从托盘选择“继续记录”。故障期间不会补计时。"
+            : null;
+        if (status.Error is not null)
+        {
+            CaptureStateText.Text = "记录失败，已暂停";
+        }
+        else if (status.IsPaused)
         {
             CaptureStateText.Text = "已暂停";
         }

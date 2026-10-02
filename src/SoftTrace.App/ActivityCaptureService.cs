@@ -5,7 +5,7 @@ using SoftTrace.Core;
 
 namespace SoftTrace.App;
 
-public sealed record CaptureStatus(bool IsPaused, bool IsIdle, AppIdentity? CurrentApp);
+public sealed record CaptureStatus(bool IsPaused, bool IsIdle, AppIdentity? CurrentApp, string? Error = null);
 
 public sealed class ActivityCaptureService : IAsyncDisposable
 {
@@ -26,6 +26,7 @@ public sealed class ActivityCaptureService : IAsyncDisposable
     private DateTimeOffset _lastCheckpointUtc;
     private bool _isSystemUnavailable;
     private bool _isIdle;
+    private string? _captureError;
 
     public ActivityCaptureService(
         ActivityStore store,
@@ -40,6 +41,7 @@ public sealed class ActivityCaptureService : IAsyncDisposable
     }
 
     public event EventHandler<CaptureStatus>? StatusChanged;
+    public event EventHandler<Exception>? CaptureFailed;
 
     public bool IsPaused { get; private set; }
 
@@ -50,7 +52,7 @@ public sealed class ActivityCaptureService : IAsyncDisposable
     public int IdleThresholdMinutes { get; set; }
 
     public CaptureStatus CurrentStatus =>
-        new(IsPaused, _isIdle || _isSystemUnavailable, _currentApp);
+        new(IsPaused, _isIdle || _isSystemUnavailable, _currentApp, _captureError);
 
     public void Start()
     {
@@ -69,12 +71,22 @@ public sealed class ActivityCaptureService : IAsyncDisposable
         await _gate.WaitAsync();
         try
         {
+            if (!paused && _captureError is not null)
+            {
+                // Close at the last persisted checkpoint, without extending through the unobserved gap.
+                await _store.RecoverInterruptedSegmentsAsync(_deviceId);
+                _captureError = null;
+            }
             IsPaused = paused;
             if (paused)
             {
                 await CloseCurrentSegmentAsync(DateTimeOffset.UtcNow, CancellationToken.None);
             }
             RaiseStatus();
+        }
+        catch (Exception exception)
+        {
+            SetCaptureFault(exception);
         }
         finally
         {
@@ -87,15 +99,47 @@ public sealed class ActivityCaptureService : IAsyncDisposable
         using var timer = new PeriodicTimer(PollInterval);
         try
         {
-            await ObserveAsync(cancellationToken);
+            await ObserveSafelyAsync(cancellationToken);
             while (await timer.WaitForNextTickAsync(cancellationToken))
             {
-                await ObserveAsync(cancellationToken);
+                await ObserveSafelyAsync(cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
+    }
+
+    private async Task ObserveSafelyAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await ObserveAsync(cancellationToken);
+        }
+        catch (Exception exception) when (
+            exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            await _gate.WaitAsync(cancellationToken);
+            try
+            {
+                SetCaptureFault(exception);
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+    }
+
+    private void SetCaptureFault(Exception exception)
+    {
+        IsPaused = true;
+        _captureError = exception.Message;
+        // Leave the stored segment at its last successful checkpoint for recovery.
+        _currentSegmentId = null;
+        _currentApp = null;
+        RaiseStatus();
+        CaptureFailed?.Invoke(this, exception);
     }
 
     private async Task ObserveAsync(CancellationToken cancellationToken)
@@ -310,6 +354,10 @@ public sealed class ActivityCaptureService : IAsyncDisposable
             }
             RaiseStatus();
         }
+        catch (Exception exception)
+        {
+            SetCaptureFault(exception);
+        }
         finally
         {
             _gate.Release();
@@ -332,6 +380,10 @@ public sealed class ActivityCaptureService : IAsyncDisposable
         try
         {
             await CloseCurrentSegmentAsync(DateTimeOffset.UtcNow, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            SetCaptureFault(exception);
         }
         finally
         {

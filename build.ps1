@@ -3,7 +3,6 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
 $dotnetCommand = (Get-Command dotnet -ErrorAction Stop).Source
 $solution = Join-Path $projectRoot 'SoftTrace.sln'
-$testProject = Join-Path $projectRoot 'tests\SoftTrace.Core.Tests\SoftTrace.Core.Tests.csproj'
 $appProject = Join-Path $projectRoot 'src\SoftTrace.App\SoftTrace.App.csproj'
 $version = '0.3.0'
 $runtime = 'win-x64'
@@ -13,8 +12,11 @@ $portableExecutable = Join-Path $distDirectory "SoftTrace-v$version-$runtime-Por
 $installerScript = Join-Path $projectRoot 'installer\SoftTrace.iss'
 
 & $dotnetCommand restore $solution
+if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed with exit code $LASTEXITCODE." }
 & $dotnetCommand build $solution --configuration Release --no-restore
-& $dotnetCommand test $testProject --configuration Release --no-build
+if ($LASTEXITCODE -ne 0) { throw "dotnet build failed with exit code $LASTEXITCODE." }
+& $dotnetCommand test $solution --configuration Release --no-build
+if ($LASTEXITCODE -ne 0) { throw "dotnet test failed with exit code $LASTEXITCODE." }
 & $dotnetCommand publish $appProject `
     --configuration Release `
     --runtime win-x64 `
@@ -24,6 +26,7 @@ $installerScript = Join-Path $projectRoot 'installer\SoftTrace.iss'
     -p:IncludeNativeLibrariesForSelfExtract=true `
     -p:DebugType=None `
     -p:DebugSymbols=false
+if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
 
 Copy-Item -LiteralPath (Join-Path $publishDirectory 'SoftTrace.exe') `
     -Destination $portableExecutable `

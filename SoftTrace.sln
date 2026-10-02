@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{661E9D43
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoftTrace.Core.Tests", "tests\SoftTrace.Core.Tests\SoftTrace.Core.Tests.csproj", "{602A7532-4543-411C-9DF7-9BEBB59245E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoftTrace.App.Tests", "tests\SoftTrace.App.Tests\SoftTrace.App.Tests.csproj", "{83593EB5-962F-471A-A5EC-B5A51319C8FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +36,15 @@ Global
 		{602A7532-4543-411C-9DF7-9BEBB59245E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{602A7532-4543-411C-9DF7-9BEBB59245E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{602A7532-4543-411C-9DF7-9BEBB59245E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83593EB5-962F-471A-A5EC-B5A51319C8FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83593EB5-962F-471A-A5EC-B5A51319C8FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83593EB5-962F-471A-A5EC-B5A51319C8FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83593EB5-962F-471A-A5EC-B5A51319C8FA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FC900620-735D-4CD9-932E-1F9ADD839870} = {308DEC6B-F7CD-4A83-B0F9-BB227EAD259A}
 		{99851B5E-D155-4163-BA3A-E297FB335E99} = {308DEC6B-F7CD-4A83-B0F9-BB227EAD259A}
 		{602A7532-4543-411C-9DF7-9BEBB59245E4} = {661E9D43-ACCF-4917-A4A4-E068E2455809}
+		{83593EB5-962F-471A-A5EC-B5A51319C8FA} = {661E9D43-ACCF-4917-A4A4-E068E2455809}
 	EndGlobalSection
 EndGlobal
