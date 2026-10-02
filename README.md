@@ -1,13 +1,20 @@
 <p align="center">
-  <img src="src/SoftTrace.App/Assets/SoftTrace-Source.png" width="112" alt="Soft Trace 图标" />
+  <img src="src/SoftTrace.App/Assets/SoftTrace-Source.png" width="112" alt="Soft Trace logo">
 </p>
 
 <h1 align="center">Soft Trace</h1>
 
-<p align="center"><strong>软件使用时间，一目了然。</strong></p>
+<p align="center"><strong>本地记录软件使用时间，清晰查看每日排行与使用习惯。</strong></p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-f59e0b.svg" alt="License: MIT"></a>
+  <a href="https://github.com/yuzhounh/soft-trace/releases/latest"><img src="https://img.shields.io/github/v/release/yuzhounh/soft-trace?style=flat&amp;color=0969da&amp;label=Release" alt="Latest stable release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-f59e0b?style=flat" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/Platform-Windows-0078d4?style=flat" alt="Platform: Windows">
+  <img src="https://img.shields.io/badge/C%23-.NET-512bd4?style=flat&amp;logo=dotnet&amp;logoColor=white" alt="C#: .NET">
+</p>
+
+<p align="center">
+  <a href="https://github.com/yuzhounh/soft-trace/releases/latest">下载发布版</a> · <a href="#开发与验证">快速开始</a> · <a href="LICENSE">开源协议</a>
 </p>
 
 Soft Trace 是一个轻量级 Windows 软件使用时间追踪工具。它在本地记录当前前台软件，并按日期汇总使用时长。
@@ -16,7 +23,7 @@ Soft Trace 是一个轻量级 Windows 软件使用时间追踪工具。它在本
   <img src="screenshots/ss_1.png" width="800" alt="Soft Trace 界面截图" />
 </p>
 
-## 亮点特性 (Features)
+## 功能特点
 
 - 自动识别当前前台软件（不记录网页、窗口标题或键盘内容）
 - 从可执行文件提取软件图标，以紧凑排行显示
@@ -80,6 +87,6 @@ v0.2 专注于可靠采集、软件排行、ManicTime 历史导入和 Firebase �
 - [timelens-chrome-extension](https://github.com/yuzhounh/timelens-chrome-extension)：统计浏览器中的网站访问时间，可与软件使用统计互补。
 - [focus-pace](https://github.com/yuzhounh/focus-pace)：管理专注与休息节奏的 Windows 工具。
 
-## 开源协议 (License)
+## 开源协议
 
 本项目采用 [MIT 许可证](LICENSE)。
