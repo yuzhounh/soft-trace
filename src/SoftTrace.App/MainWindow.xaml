@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SoftTrace.App"
         mc:Ignorable="d"
-        Title="SoftTrace" Icon="Assets/SoftTrace.ico" Height="700" Width="1000" MinHeight="580" MinWidth="820"
+        Title="SoftTrace" Icon="Assets/SoftTrace.ico" Height="680" Width="980" MinHeight="480" MinWidth="600"
         Background="{StaticResource PageBrush}" WindowStartupLocation="CenterScreen"
         FontFamily="Microsoft YaHei" FontSize="15">
     <Window.Resources>
@@ -501,30 +501,23 @@
         </Grid>
 
         <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="10"
-                Padding="18" Margin="0,0,0,16">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                Padding="16,12" Margin="0,0,0,16">
+            <WrapPanel Orientation="Horizontal">
+                <StackPanel Margin="0,0,14,6">
                     <TextBlock Text="开始日期" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
                     <DatePicker x:Name="FromDatePicker" Width="150" Height="36"
                                 CalendarStyle="{StaticResource LargeCalendarStyle}"
                                 CalendarOpened="DatePicker_OnCalendarOpened"
                                 SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Margin="0,0,20,0">
+                <StackPanel Margin="0,0,14,6">
                     <TextBlock Text="结束日期" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
                     <DatePicker x:Name="ToDatePicker" Width="150" Height="36"
                                 CalendarStyle="{StaticResource LargeCalendarStyle}"
                                 CalendarOpened="DatePicker_OnCalendarOpened"
                                 SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
                 </StackPanel>
-                <StackPanel Grid.Column="2" Margin="0,0,20,0">
+                <StackPanel Margin="0,0,14,6">
                     <TextBlock Text="范围" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
                     <ComboBox x:Name="PeriodComboBox" Width="150" Height="36"
                               Style="{StaticResource RangeComboBoxStyle}"
@@ -544,7 +537,7 @@
                         <ComboBoxItem Content="自定义" Tag="Custom" Visibility="Collapsed" />
                     </ComboBox>
                 </StackPanel>
-                <StackPanel Grid.Column="3" Margin="0,0,20,0">
+                <StackPanel Margin="0,0,14,6">
                     <TextBlock Text="设备" Width="170" Margin="0,0,0,6"
                                Foreground="{StaticResource MutedTextBrush}" FontSize="14" />
                     <ToggleButton x:Name="DeviceFilterToggleButton" Width="170" Height="36" Content="当前设备"
@@ -655,7 +648,7 @@
                         </Border>
                     </Popup>
                 </StackPanel>
-                <StackPanel Grid.Column="4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <StackPanel Margin="0,0,0,6" VerticalAlignment="Center">
                     <TextBlock x:Name="CaptureStateText" Text="正在记录"
                                HorizontalAlignment="Right" TextAlignment="Right"
                                Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
@@ -670,7 +663,7 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
-            </Grid>
+            </WrapPanel>
         </Border>
 
         <Grid Grid.Row="2" Margin="4,4,4,14">

@@ -207,6 +207,12 @@ public partial class App
             HasDropShadow = false
         };
 
+        _trayContextMenu.Resources = new ResourceDictionary
+        {
+            Source = new Uri("/SoftTrace;component/Styles/TrayMenu.xaml", UriKind.Relative)
+        };
+        _trayContextMenu.Style = (Style)_trayContextMenu.Resources[typeof(System.Windows.Controls.ContextMenu)];
+
         var openItem = new System.Windows.Controls.MenuItem
         {
             Header = "打开 SoftTrace"
