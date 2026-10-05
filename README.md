@@ -20,7 +20,7 @@
 Soft Trace 是一个轻量级 Windows 软件使用时间追踪工具。它在本地记录当前前台软件，并按日期汇总使用时长。
 
 <p align="center">
-  <img src="screenshots/ss_1.png" width="800" alt="Soft Trace 界面截图" />
+  <img src="screenshot.png" width="800" alt="Soft Trace 界面截图" />
 </p>
 
 ## 功能特点
