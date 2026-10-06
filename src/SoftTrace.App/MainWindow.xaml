@@ -115,13 +115,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Thumb}">
                         <Border x:Name="ThumbBody" Margin="2,0"
-                                Background="#C8CED9" CornerRadius="4" />
+                                Background="#DFE3EA" CornerRadius="4" />
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ThumbBody" Property="Background" Value="#AEB7C6" />
+                                <Setter TargetName="ThumbBody" Property="Background" Value="#C5CBD8" />
                             </Trigger>
                             <Trigger Property="IsDragging" Value="True">
-                                <Setter TargetName="ThumbBody" Property="Background" Value="#8F9BAD" />
+                                <Setter TargetName="ThumbBody" Property="Background" Value="#A4AFBF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -134,13 +134,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Thumb}">
                         <Border x:Name="ThumbBody" Margin="0,2"
-                                Background="#C8CED9" CornerRadius="4" />
+                                Background="#DFE3EA" CornerRadius="4" />
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ThumbBody" Property="Background" Value="#AEB7C6" />
+                                <Setter TargetName="ThumbBody" Property="Background" Value="#C5CBD8" />
                             </Trigger>
                             <Trigger Property="IsDragging" Value="True">
-                                <Setter TargetName="ThumbBody" Property="Background" Value="#8F9BAD" />
+                                <Setter TargetName="ThumbBody" Property="Background" Value="#A4AFBF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -502,153 +502,8 @@
 
         <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="10"
                 Padding="16,12" Margin="0,0,0,16">
-            <WrapPanel Orientation="Horizontal">
-                <StackPanel Margin="0,0,14,6">
-                    <TextBlock Text="开始日期" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
-                    <DatePicker x:Name="FromDatePicker" Width="150" Height="36"
-                                CalendarStyle="{StaticResource LargeCalendarStyle}"
-                                CalendarOpened="DatePicker_OnCalendarOpened"
-                                SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
-                </StackPanel>
-                <StackPanel Margin="0,0,14,6">
-                    <TextBlock Text="结束日期" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
-                    <DatePicker x:Name="ToDatePicker" Width="150" Height="36"
-                                CalendarStyle="{StaticResource LargeCalendarStyle}"
-                                CalendarOpened="DatePicker_OnCalendarOpened"
-                                SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
-                </StackPanel>
-                <StackPanel Margin="0,0,14,6">
-                    <TextBlock Text="范围" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
-                    <ComboBox x:Name="PeriodComboBox" Width="150" Height="36"
-                              Style="{StaticResource RangeComboBoxStyle}"
-                              SelectedIndex="0" Cursor="Hand" VerticalContentAlignment="Center"
-                              SelectionChanged="PeriodComboBox_OnSelectionChanged">
-                        <ComboBoxItem Content="今天" Tag="Today" />
-                        <ComboBoxItem Content="昨天" Tag="Yesterday" />
-                        <ComboBoxItem Content="本周" Tag="ThisWeek" />
-                        <ComboBoxItem Content="本月" Tag="ThisMonth" />
-                        <ComboBoxItem Content="本季度" Tag="ThisQuarter" />
-                        <ComboBoxItem Content="今年" Tag="ThisYear" />
-                        <ComboBoxItem Content="近 7 天" Tag="Last7Days" />
-                        <ComboBoxItem Content="近 30 天" Tag="Last30Days" />
-                        <ComboBoxItem Content="近一季度" Tag="LastQuarter" />
-                        <ComboBoxItem Content="近一年" Tag="LastYear" />
-                        <ComboBoxItem Content="全部" Tag="All" />
-                        <ComboBoxItem Content="自定义" Tag="Custom" Visibility="Collapsed" />
-                    </ComboBox>
-                </StackPanel>
-                <StackPanel Margin="0,0,14,6">
-                    <TextBlock Text="设备" Width="170" Margin="0,0,0,6"
-                               Foreground="{StaticResource MutedTextBrush}" FontSize="14" />
-                    <ToggleButton x:Name="DeviceFilterToggleButton" Width="170" Height="36" Content="当前设备"
-                                  Cursor="Hand" FocusVisualStyle="{x:Null}">
-                        <ToggleButton.Template>
-                            <ControlTemplate TargetType="{x:Type ToggleButton}">
-                                <Border x:Name="DeviceFilterBorder" Background="#FFFFFF"
-                                        BorderBrush="#D5DAE5" BorderThickness="1">
-                                    <Grid>
-                                        <TextBlock Text="{TemplateBinding Content}"
-                                                   Margin="10,0,30,0" VerticalAlignment="Center"
-                                                   Foreground="{StaticResource TextBrush}"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <Path Width="8" Height="4" Margin="0,0,11,0"
-                                              HorizontalAlignment="Right" VerticalAlignment="Center"
-                                              Data="M 0 0 L 4 4 L 8 0"
-                                              Stroke="#697180" StrokeThickness="1.4" />
-                                    </Grid>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="DeviceFilterBorder" Property="Background" Value="#F7F8FA" />
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </ToggleButton.Template>
-                    </ToggleButton>
-                    <Popup x:Name="DeviceFilterPopup"
-                           PlacementTarget="{Binding ElementName=DeviceFilterToggleButton}"
-                           Placement="Bottom" VerticalOffset="2"
-                           IsOpen="{Binding IsChecked, ElementName=DeviceFilterToggleButton, Mode=TwoWay}"
-                           StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade"
-                           Closed="DeviceFilterPopup_OnClosed">
-                        <Border Width="{Binding ActualWidth, ElementName=DeviceFilterToggleButton}"
-                                MaxHeight="300" Padding="3"
-                                Background="#FFFFFF" BorderBrush="#D5DAE5"
-                                BorderThickness="1" CornerRadius="6">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding DeviceFilters}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border x:Name="DeviceRow" Margin="1" Padding="9,6"
-                                                    Background="Transparent" CornerRadius="5"
-                                                    Cursor="Hand"
-                                                    MouseLeftButtonUp="DeviceFilterItem_OnMouseLeftButtonUp">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock x:Name="DeviceNameText" Text="{Binding Name}"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="{StaticResource TextBrush}"
-                                                               TextTrimming="CharacterEllipsis" />
-                                                    <TextBox x:Name="DeviceNameEditor"
-                                                             Grid.Column="0" Grid.ColumnSpan="2"
-                                                             Height="28" Padding="5,0" MaxLength="64"
-                                                             Visibility="Collapsed"
-                                                             Text="{Binding Name, Mode=OneTime}"
-                                                             VerticalContentAlignment="Center"
-                                                             BorderBrush="#AEBBE2" BorderThickness="1"
-                                                             LostKeyboardFocus="DeviceNameEditor_OnLostKeyboardFocus"
-                                                             KeyDown="DeviceNameEditor_OnKeyDown" />
-                                                    <Button x:Name="DeviceEditButton" Grid.Column="1"
-                                                            Width="25" Height="25" Margin="6,0,0,0"
-                                                            Visibility="Collapsed" Background="Transparent"
-                                                            BorderThickness="0" Cursor="Hand"
-                                                            FocusVisualStyle="{x:Null}" ToolTip="编辑设备名称"
-                                                            PreviewMouseLeftButtonDown="DeviceEditButton_OnPreviewMouseLeftButtonDown">
-                                                        <Button.Template>
-                                                            <ControlTemplate TargetType="{x:Type Button}">
-                                                                <Border x:Name="EditButtonBackground"
-                                                                        Background="Transparent" CornerRadius="4">
-                                                                    <Path Width="13" Height="13" Stretch="Uniform"
-                                                                          Stroke="#53699F" StrokeThickness="1.5"
-                                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                                                          StrokeLineJoin="Round"
-                                                                          Data="M 2,11 L 4.8,10.4 L 11.2,4 L 8,0.8 L 1.6,7.2 Z M 7.2,1.6 L 10.4,4.8" />
-                                                                </Border>
-                                                                <ControlTemplate.Triggers>
-                                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                                        <Setter TargetName="EditButtonBackground"
-                                                                                Property="Background" Value="#DDE5F8" />
-                                                                    </Trigger>
-                                                                </ControlTemplate.Triggers>
-                                                            </ControlTemplate>
-                                                        </Button.Template>
-                                                    </Button>
-                                                </Grid>
-                                            </Border>
-                                            <DataTemplate.Triggers>
-                                                <Trigger SourceName="DeviceRow" Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="DeviceRow" Property="Background" Value="#F0F3FA" />
-                                                    <Setter TargetName="DeviceEditButton" Property="Visibility" Value="Visible" />
-                                                </Trigger>
-                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter TargetName="DeviceRow" Property="Background" Value="#E8EEFF" />
-                                                    <Setter TargetName="DeviceNameText" Property="Foreground" Value="#344BA8" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Id}" Value="">
-                                                    <Setter TargetName="DeviceEditButton" Property="Visibility" Value="Collapsed" />
-                                                </DataTrigger>
-                                            </DataTemplate.Triggers>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                        </Border>
-                    </Popup>
-                </StackPanel>
-                <StackPanel Margin="0,0,0,6" VerticalAlignment="Center">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="14,0,0,6">
                     <TextBlock x:Name="CaptureStateText" Text="正在记录"
                                HorizontalAlignment="Right" TextAlignment="Right"
                                Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
@@ -663,7 +518,154 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
-            </WrapPanel>
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Margin="0,0,14,6">
+                        <TextBlock Text="开始日期" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
+                        <DatePicker x:Name="FromDatePicker" Width="150" Height="36"
+                                    CalendarStyle="{StaticResource LargeCalendarStyle}"
+                                    CalendarOpened="DatePicker_OnCalendarOpened"
+                                    SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,14,6">
+                        <TextBlock Text="结束日期" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
+                        <DatePicker x:Name="ToDatePicker" Width="150" Height="36"
+                                    CalendarStyle="{StaticResource LargeCalendarStyle}"
+                                    CalendarOpened="DatePicker_OnCalendarOpened"
+                                    SelectedDateChanged="DatePicker_OnSelectedDateChanged" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,14,6">
+                        <TextBlock Text="范围" Foreground="{StaticResource MutedTextBrush}" FontSize="14" Margin="0,0,0,6" />
+                        <ComboBox x:Name="PeriodComboBox" Width="150" Height="36"
+                                  Style="{StaticResource RangeComboBoxStyle}"
+                                  SelectedIndex="0" Cursor="Hand" VerticalContentAlignment="Center"
+                                  SelectionChanged="PeriodComboBox_OnSelectionChanged">
+                            <ComboBoxItem Content="今天" Tag="Today" />
+                            <ComboBoxItem Content="昨天" Tag="Yesterday" />
+                            <ComboBoxItem Content="本周" Tag="ThisWeek" />
+                            <ComboBoxItem Content="本月" Tag="ThisMonth" />
+                            <ComboBoxItem Content="本季度" Tag="ThisQuarter" />
+                            <ComboBoxItem Content="今年" Tag="ThisYear" />
+                            <ComboBoxItem Content="近 7 天" Tag="Last7Days" />
+                            <ComboBoxItem Content="近 30 天" Tag="Last30Days" />
+                            <ComboBoxItem Content="近一季度" Tag="LastQuarter" />
+                            <ComboBoxItem Content="近一年" Tag="LastYear" />
+                            <ComboBoxItem Content="全部" Tag="All" />
+                            <ComboBoxItem Content="自定义" Tag="Custom" Visibility="Collapsed" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,14,6">
+                        <TextBlock Text="设备" Width="170" Margin="0,0,0,6"
+                                   Foreground="{StaticResource MutedTextBrush}" FontSize="14" />
+                        <ToggleButton x:Name="DeviceFilterToggleButton" Width="170" Height="36" Content="当前设备"
+                                      Cursor="Hand" FocusVisualStyle="{x:Null}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                    <Border x:Name="DeviceFilterBorder" Background="#FFFFFF"
+                                            BorderBrush="#D5DAE5" BorderThickness="1">
+                                        <Grid>
+                                            <TextBlock Text="{TemplateBinding Content}"
+                                                       Margin="10,0,30,0" VerticalAlignment="Center"
+                                                       Foreground="{StaticResource TextBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <Path Width="8" Height="4" Margin="0,0,11,0"
+                                                  HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                  Data="M 0 0 L 4 4 L 8 0"
+                                                  Stroke="#697180" StrokeThickness="1.4" />
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="DeviceFilterBorder" Property="Background" Value="#F7F8FA" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <Popup x:Name="DeviceFilterPopup"
+                               PlacementTarget="{Binding ElementName=DeviceFilterToggleButton}"
+                               Placement="Bottom" VerticalOffset="2"
+                               IsOpen="{Binding IsChecked, ElementName=DeviceFilterToggleButton, Mode=TwoWay}"
+                               StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade"
+                               Closed="DeviceFilterPopup_OnClosed">
+                            <Border Width="{Binding ActualWidth, ElementName=DeviceFilterToggleButton}"
+                                    MaxHeight="300" Padding="3"
+                                    Background="#FFFFFF" BorderBrush="#D5DAE5"
+                                    BorderThickness="1" CornerRadius="6">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding DeviceFilters}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border x:Name="DeviceRow" Margin="1" Padding="9,6"
+                                                        Background="Transparent" CornerRadius="5"
+                                                        Cursor="Hand"
+                                                        MouseLeftButtonUp="DeviceFilterItem_OnMouseLeftButtonUp">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock x:Name="DeviceNameText" Text="{Binding Name}"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{StaticResource TextBrush}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBox x:Name="DeviceNameEditor"
+                                                                 Grid.Column="0" Grid.ColumnSpan="2"
+                                                                 Height="28" Padding="5,0" MaxLength="64"
+                                                                 Visibility="Collapsed"
+                                                                 Text="{Binding Name, Mode=OneTime}"
+                                                                 VerticalContentAlignment="Center"
+                                                                 BorderBrush="#AEBBE2" BorderThickness="1"
+                                                                 LostKeyboardFocus="DeviceNameEditor_OnLostKeyboardFocus"
+                                                                 KeyDown="DeviceNameEditor_OnKeyDown" />
+                                                        <Button x:Name="DeviceEditButton" Grid.Column="1"
+                                                                Width="25" Height="25" Margin="6,0,0,0"
+                                                                Visibility="Collapsed" Background="Transparent"
+                                                                BorderThickness="0" Cursor="Hand"
+                                                                FocusVisualStyle="{x:Null}" ToolTip="编辑设备名称"
+                                                                PreviewMouseLeftButtonDown="DeviceEditButton_OnPreviewMouseLeftButtonDown">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="{x:Type Button}">
+                                                                    <Border x:Name="EditButtonBackground"
+                                                                            Background="Transparent" CornerRadius="4">
+                                                                        <Path Width="13" Height="13" Stretch="Uniform"
+                                                                              Stroke="#53699F" StrokeThickness="1.5"
+                                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                                              StrokeLineJoin="Round"
+                                                                              Data="M 2,11 L 4.8,10.4 L 11.2,4 L 8,0.8 L 1.6,7.2 Z M 7.2,1.6 L 10.4,4.8" />
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="EditButtonBackground"
+                                                                                    Property="Background" Value="#DDE5F8" />
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                    </Grid>
+                                                </Border>
+                                                <DataTemplate.Triggers>
+                                                    <Trigger SourceName="DeviceRow" Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="DeviceRow" Property="Background" Value="#F0F3FA" />
+                                                        <Setter TargetName="DeviceEditButton" Property="Visibility" Value="Visible" />
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter TargetName="DeviceRow" Property="Background" Value="#E8EEFF" />
+                                                        <Setter TargetName="DeviceNameText" Property="Foreground" Value="#344BA8" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Id}" Value="">
+                                                        <Setter TargetName="DeviceEditButton" Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </StackPanel>
+                </WrapPanel>
+            </DockPanel>
         </Border>
 
         <Grid Grid.Row="2" Margin="4,4,4,14">
