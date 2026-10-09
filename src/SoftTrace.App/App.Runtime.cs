@@ -21,6 +21,8 @@ public partial class App
     private HttpClient? _httpClient;
     private MainWindow? _mainWindow;
     private string? _logPath;
+    private bool _showMainWindowInProgress;
+    private bool _trayMenuOpening;
 
     public bool IsExiting { get; private set; }
 
@@ -65,7 +67,7 @@ public partial class App
             Directory.CreateDirectory(dataDirectory);
             MigrateLegacyData(dataDirectory);
             _logPath = Path.Combine(dataDirectory, "softtrace.log");
-            Log("Starting SoftTrace.");
+            Log($"Starting SoftTrace. Version={typeof(App).Assembly.GetName().Version}; Executable={Environment.ProcessPath}; PID={Environment.ProcessId}");
             var store = new ActivityStore(Path.Combine(dataDirectory, "softtrace.db"));
             await store.InitializeAsync();
             var device = await store.GetOrCreateDeviceIdentityAsync(Environment.MachineName);
@@ -128,11 +130,38 @@ public partial class App
 
     public void ShowMainWindow()
     {
-        if (_mainWindow is null)
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(ShowMainWindow);
+            return;
+        }
+        if (IsExiting || _mainWindow is null || _showMainWindowInProgress)
         {
             return;
         }
 
+        _showMainWindowInProgress = true;
+        try
+        {
+            if (_trayContextMenu is not null)
+            {
+                _trayContextMenu.IsOpen = false;
+            }
+            Log($"Showing main window. Visible={_mainWindow.IsVisible}; State={_mainWindow.WindowState}");
+            ShowMainWindowCore();
+        }
+        finally
+        {
+            _showMainWindowInProgress = false;
+        }
+    }
+
+    private void ShowMainWindowCore()
+    {
+        if (_mainWindow is null)
+        {
+            return;
+        }
         if (!_mainWindow.IsVisible)
         {
             _mainWindow.Show();
@@ -217,7 +246,7 @@ public partial class App
         {
             Header = "打开 SoftTrace"
         };
-        openItem.Click += (_, _) => Dispatcher.Invoke(ShowMainWindow);
+        openItem.Click += (_, _) => QueueTrayAction("Open main window from menu", ShowMainWindow);
         _trayContextMenu.Items.Add(openItem);
 
         _trayContextMenu.Items.Add(new System.Windows.Controls.Separator());
@@ -262,11 +291,12 @@ public partial class App
         {
             Header = "退出"
         };
-        exitItem.Click += (_, _) => Dispatcher.Invoke(RequestExit);
+        exitItem.Click += (_, _) => QueueTrayAction("Exit from menu", RequestExit);
         _trayContextMenu.Items.Add(exitItem);
 
         _trayContextMenu.Opened += (_, _) =>
         {
+            Log("Tray menu opened.");
             if (_autoStartTrayMenuItem is not null)
             {
                 _autoStartTrayMenuItem.IsChecked = _startupService.IsEnabled();
@@ -274,13 +304,16 @@ public partial class App
 
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, () =>
             {
-                if (System.Windows.PresentationSource.FromVisual(_trayContextMenu) is System.Windows.Interop.HwndSource source)
+                if (!IsExiting && _trayContextMenu.IsOpen &&
+                    System.Windows.PresentationSource.FromVisual(_trayContextMenu) is System.Windows.Interop.HwndSource source &&
+                    !source.IsDisposed)
                 {
                     SetForegroundWindow(source.Handle);
                     _trayContextMenu.Focus();
                 }
             });
         };
+        _trayContextMenu.Closed += (_, _) => Log("Tray menu closed.");
 
         try
         {
@@ -322,33 +355,62 @@ public partial class App
         {
             if (e.Button == Forms.MouseButtons.Left)
             {
-                Dispatcher.Invoke(() =>
-                {
-                    if (_trayContextMenu is not null)
-                    {
-                        _trayContextMenu.IsOpen = false;
-                    }
-                    ShowMainWindow();
-                });
+                QueueTrayAction("Left click", ShowMainWindow);
             }
             else if (e.Button == Forms.MouseButtons.Right)
             {
-                Dispatcher.Invoke(() =>
-                {
-                    if (_trayContextMenu is null)
-                    {
-                        return;
-                    }
-
-                    if (_autoStartTrayMenuItem is not null)
-                    {
-                        _autoStartTrayMenuItem.IsChecked = _startupService.IsEnabled();
-                    }
-
-                    _trayContextMenu.IsOpen = true;
-                });
+                QueueTrayAction("Right click", OpenTrayMenu);
             }
         };
+    }
+
+    private void QueueTrayAction(string operation, Action action)
+    {
+        if (IsExiting || Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
+        {
+            return;
+        }
+
+        // Leave the WinForms native callback before creating WPF popup/window hosts.
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, () =>
+        {
+            if (IsExiting)
+            {
+                return;
+            }
+            Log($"Tray action: {operation}.");
+            try
+            {
+                action();
+            }
+            catch (Exception exception)
+            {
+                Log($"Tray action failed ({operation}): {exception}");
+                throw;
+            }
+        });
+    }
+
+    private void OpenTrayMenu()
+    {
+        if (_trayContextMenu is null || _trayContextMenu.IsOpen || _trayMenuOpening || _showMainWindowInProgress)
+        {
+            return;
+        }
+
+        _trayMenuOpening = true;
+        try
+        {
+            if (_autoStartTrayMenuItem is not null)
+            {
+                _autoStartTrayMenuItem.IsChecked = _startupService.IsEnabled();
+            }
+            _trayContextMenu.IsOpen = true;
+        }
+        finally
+        {
+            _trayMenuOpening = false;
+        }
     }
 
     private void UpdateTrayCaptureStatus(CaptureStatus status)
