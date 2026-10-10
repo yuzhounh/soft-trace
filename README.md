@@ -47,10 +47,10 @@ Soft Trace 是一个轻量级 Windows 软件使用时间追踪工具。它在本
 
 从 [GitHub Releases](https://github.com/yuzhounh/soft-trace/releases) 下载 Windows x64 版本：
 
-- `SoftTrace-v0.3.2-win-x64-Setup.exe`：推荐普通用户使用的安装版，提供开始菜单快捷方式、可选桌面快捷方式和标准卸载入口。
-- `SoftTrace-v0.3.2-win-x64-Portable.exe`：绿色便携单文件，无需安装即可运行。
+- `SoftTrace-v0.3.3-win-x64-Setup.exe`：推荐普通用户使用的安装版，提供开始菜单快捷方式、可选桌面快捷方式和标准卸载入口。
+- `SoftTrace-v0.3.3-win-x64-Portable.zip`：绿色便携版，ZIP 内只有 `SoftTrace.exe`，解压后无需安装即可运行。
 
-`v0.3.2` 改善窄窗口布局，四列表格按比例随窗口伸缩，支持拖动相邻列并保存比例；长名称以省略号显示，悬停可查看全称。同时修复托盘界面的同步重入问题并更新应用图标。升级时先从托盘退出旧版，再安装或替换程序；保留原有本地数据库和设置，无需卸载或删除数据。
+`v0.3.3` 修复全新安装后 Google 登录提示缺少客户端配置的问题：桌面登录配置内置于程序，用户无需另外配置文件。便携版改为仅含 `SoftTrace.exe` 的 ZIP。保留 v0.3.2 的表格比例调节、窄窗口布局、托盘修复和图标更新。升级时先从托盘退出旧版，再安装或替换程序；保留原有本地数据库和设置，无需卸载或删除数据。
 
 两个版本均为 Windows x64 自包含程序，不要求另行安装 .NET。关闭主窗口只会隐藏到系统托盘；需要彻底退出时，请右键托盘图标并选择“退出”。卸载安装版时默认保留本地使用记录，也可在卸载提示中选择一并删除。
 
@@ -82,6 +82,8 @@ cd soft-trace
 ```
 
 `run.ps1` 使用系统级 .NET 10 SDK 启动开发版；`build.ps1` 会运行 Release 构建、核心与采集恢复测试，并生成自包含便携版与 Inno Setup 安装包。构建或测试失败会停止打包。构建安装包需要 Inno Setup 6。
+
+Google 桌面 OAuth 客户端配置在构建时作为资源嵌入程序。开发者须提供 `.tools/firebase-oauth-secret.txt` 中的桌面客户端值；`build.ps1` 也可从当前 Windows 用户已有的 `SoftTrace/firebase-oauth-secret.txt` 配置自动迁移。此构建输入不纳入 Git，不能使用用户刷新令牌或服务账号密钥替代。发布构建缺少配置时会停止；最终用户无需该文件，登录令牌继续使用 DPAPI 加密保存。
 
 ## 当前边界
 
