@@ -15,7 +15,6 @@ namespace SoftTrace.App;
 public partial class MainWindow
 {
     private const string MainWindowSizeSettingKey = "main_window_size";
-    private const string UsageColumnWidthsSettingKey = "usage_column_widths";
     private readonly StartupService _startupService = new();
     private ActivityStore? _store;
     private ActivityCaptureService? _capture;
@@ -71,7 +70,7 @@ public partial class MainWindow
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         await RestoreMainWindowSizeAsync();
-        await RestoreUsageColumnWidthsAsync();
+        await RestoreUsageColumnRatiosAsync();
         _initialized = true;
         await RefreshDeviceFiltersAsync();
         await SyncPeriodDatesIfDynamicAsync();
@@ -156,70 +155,6 @@ public partial class MainWindow
         catch
         {
             // Window resizing should remain usable even if preferences cannot be saved.
-        }
-    }
-
-    private async Task RestoreUsageColumnWidthsAsync()
-    {
-        if (_store is null)
-        {
-            return;
-        }
-
-        try
-        {
-            var savedWidths = await _store.GetSettingAsync(UsageColumnWidthsSettingKey);
-            var widthValues = savedWidths?.Split(';');
-            if (widthValues?.Length != UsageDataGrid.Columns.Count)
-            {
-                return;
-            }
-
-            // Keep the final column flexible so it always absorbs the table's remaining width.
-            for (var index = 0; index < widthValues.Length - 1; index++)
-            {
-                if (double.TryParse(
-                        widthValues[index],
-                        System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        out var width) &&
-                    double.IsFinite(width) &&
-                    width > 0)
-                {
-                    var column = UsageDataGrid.Columns[index];
-                    column.Width = new System.Windows.Controls.DataGridLength(
-                        Math.Clamp(width, column.MinWidth, 1200));
-                }
-            }
-        }
-        catch
-        {
-            // Invalid or unavailable UI preferences should not prevent startup.
-        }
-    }
-
-    private async void UsageDataGrid_OnPreviewMouseLeftButtonUp(
-        object sender,
-        System.Windows.Input.MouseButtonEventArgs e)
-    {
-        if (_store is null ||
-            e.OriginalSource is not DependencyObject source ||
-            FindVisualAncestor<System.Windows.Controls.Primitives.Thumb>(source) is null)
-        {
-            return;
-        }
-
-        try
-        {
-            var widths = string.Join(
-                ";",
-                UsageDataGrid.Columns.Select(column =>
-                    column.ActualWidth.ToString("R", System.Globalization.CultureInfo.InvariantCulture)));
-            await _store.SetSettingAsync(UsageColumnWidthsSettingKey, widths);
-        }
-        catch
-        {
-            // Column resizing should remain usable even if preferences cannot be saved.
         }
     }
 
