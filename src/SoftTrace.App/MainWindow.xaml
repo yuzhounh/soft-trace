@@ -691,7 +691,6 @@
             <DataGrid x:Name="UsageDataGrid" ItemsSource="{Binding UsageRows}" AutoGenerateColumns="False"
                       IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
                       CanUserResizeRows="False" CanUserResizeColumns="True" SelectionUnit="FullRow"
-                      PreviewMouseLeftButtonUp="UsageDataGrid_OnPreviewMouseLeftButtonUp"
                       Sorting="UsageDataGrid_OnSorting"
                       HeadersVisibility="Column" GridLinesVisibility="None"
                       BorderThickness="0" FocusVisualStyle="{x:Null}"
@@ -703,10 +702,11 @@
                 <DataGrid.Resources>
                     <Style x:Key="CenteredDataGridText" TargetType="TextBlock">
                         <Setter Property="VerticalAlignment" Value="Center" />
-                        <Setter Property="Margin" Value="8,0,0,0" />
+                        <Setter Property="Margin" Value="8,0,8,0" />
                         <Setter Property="FontSize" Value="15" />
                         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
                         <Setter Property="TextWrapping" Value="NoWrap" />
+                        <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}" />
                     </Style>
                     <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernScrollBarStyle}" />
                 </DataGrid.Resources>
@@ -821,8 +821,11 @@
                                                   Width="8" Height="4" Margin="0,0,10,0"
                                                   HorizontalAlignment="Right" VerticalAlignment="Center"
                                                   Fill="#7B8494" Data="M 0 0 L 4 4 L 8 0 Z" />
-                                            <Thumb x:Name="PART_LeftHeaderGripper" Width="8"
+                                            <Thumb x:Name="LeftColumnResizeThumb" Width="8" Tag="Left"
                                                    HorizontalAlignment="Left" Background="Transparent"
+                                                   DragStarted="UsageColumnResize_OnDragStarted"
+                                                   DragDelta="UsageColumnResize_OnDragDelta"
+                                                   DragCompleted="UsageColumnResize_OnDragCompleted"
                                                    Cursor="SizeWE">
                                                 <Thumb.Template>
                                                     <ControlTemplate TargetType="Thumb">
@@ -830,8 +833,11 @@
                                                     </ControlTemplate>
                                                 </Thumb.Template>
                                             </Thumb>
-                                            <Thumb x:Name="PART_RightHeaderGripper" Width="8"
+                                            <Thumb x:Name="RightColumnResizeThumb" Width="8" Tag="Right"
                                                    HorizontalAlignment="Right" Background="Transparent"
+                                                   DragStarted="UsageColumnResize_OnDragStarted"
+                                                   DragDelta="UsageColumnResize_OnDragDelta"
+                                                   DragCompleted="UsageColumnResize_OnDragCompleted"
                                                    Cursor="SizeWE">
                                                 <Thumb.Template>
                                                     <ControlTemplate TargetType="Thumb">
@@ -842,8 +848,12 @@
                                         </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>
+                                        <Trigger Property="DisplayIndex" Value="0">
+                                            <Setter TargetName="LeftColumnResizeThumb" Property="Visibility" Value="Collapsed" />
+                                        </Trigger>
                                         <Trigger Property="DisplayIndex" Value="3">
                                             <Setter TargetName="HeaderBorder" Property="BorderThickness" Value="0,0,0,1" />
+                                            <Setter TargetName="RightColumnResizeThumb" Property="Visibility" Value="Collapsed" />
                                         </Trigger>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="HeaderBorder" Property="Background" Value="#EEF1F7" />
@@ -861,7 +871,7 @@
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="软件" Width="5*" MinWidth="240"
+                    <DataGridTemplateColumn Header="软件" Width="32*" MinWidth="140"
                                             SortMemberPath="AppName" CanUserSort="True" CanUserResize="True">
                         <DataGridTemplateColumn.HeaderTemplate>
                             <DataTemplate>
@@ -870,23 +880,28 @@
                         </DataGridTemplateColumn.HeaderTemplate>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                                    <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,0,9,0"
+                                <Grid VerticalAlignment="Center" Margin="8,0,8,0" ToolTip="{Binding AppName}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Image Grid.Column="0" Source="{Binding Icon}" Width="20" Height="20" Margin="0,0,9,0"
                                            RenderOptions.BitmapScalingMode="HighQuality" />
-                                    <TextBlock Text="{Binding AppName}" VerticalAlignment="Center" FontSize="15" />
-                                </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding AppName}" VerticalAlignment="Center" FontSize="15"
+                                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                </Grid>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="进程" Binding="{Binding ProcessName}" Width="180" MinWidth="120"
+                    <DataGridTextColumn Header="进程" Binding="{Binding ProcessName}" Width="26*" MinWidth="100"
                                         CanUserResize="True"
                                         SortMemberPath="ProcessName"
                                         ElementStyle="{StaticResource CenteredDataGridText}" />
-                    <DataGridTextColumn Header="使用时长" Binding="{Binding DurationText}" Width="130" MinWidth="100"
+                    <DataGridTextColumn Header="使用时长" Binding="{Binding DurationText}" Width="28*" MinWidth="100"
                                         CanUserResize="True"
                                         SortMemberPath="DurationSeconds"
                                         ElementStyle="{StaticResource CenteredDataGridText}" />
-                    <DataGridTextColumn Header="占比" Binding="{Binding ShareText}" Width="*" MinWidth="75"
+                    <DataGridTextColumn Header="占比" Binding="{Binding ShareText}" Width="14*" MinWidth="64"
                                         CanUserResize="True"
                                         SortMemberPath="ShareRatio"
                                         ElementStyle="{StaticResource CenteredDataGridText}" />
