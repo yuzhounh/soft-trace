@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <GoogleDesktopClientSecretFile Condition="'$(GoogleDesktopClientSecretFile)' == ''">$(MSBuildProjectDirectory)\..\..\.tools\firebase-oauth-secret.txt</GoogleDesktopClientSecretFile>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
@@ -19,10 +20,19 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>SoftTrace</AssemblyName>
-    <Version>0.3.2</Version>
+    <Version>0.3.3</Version>
     <Product>SoftTrace</Product>
     <Description>轻量级 Windows 软件使用时间追踪工具</Description>
     <ApplicationIcon>Assets\SoftTrace.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(GoogleDesktopClientSecretFile)')">
+    <EmbeddedResource Include="$(GoogleDesktopClientSecretFile)" LogicalName="SoftTrace.GoogleDesktopClientSecret" />
+  </ItemGroup>
+
+  <Target Name="RequireGoogleDesktopClientConfiguration" BeforeTargets="PrepareForPublish">
+    <Error Condition="!Exists('$(GoogleDesktopClientSecretFile)')"
+           Text="Desktop OAuth configuration is missing. Run build.ps1 with a configured desktop OAuth client before publishing." />
+  </Target>
 
 </Project>

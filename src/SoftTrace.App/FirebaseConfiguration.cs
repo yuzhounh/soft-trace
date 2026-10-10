@@ -11,31 +11,17 @@ internal static class FirebaseConfiguration
 
     public static string GetGoogleDesktopClientSecret()
     {
-        var path = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SoftTrace",
-            "firebase-oauth-secret.txt");
-        if (!File.Exists(path))
+        // Desktop OAuth identifies a public installed app; user tokens remain DPAPI-protected.
+        using var stream = typeof(FirebaseConfiguration).Assembly.GetManifestResourceStream(
+            "SoftTrace.GoogleDesktopClientSecret")
+            ?? throw new InvalidOperationException("当前程序缺少内置 Google 登录配置，请安装完整发布版。");
+        using var reader = new StreamReader(stream);
+        var clientSecret = reader.ReadToEnd().Trim();
+        if (string.IsNullOrWhiteSpace(clientSecret) ||
+            clientSecret.StartsWith("dpapi:", StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("缺少 Google OAuth 客户端配置，请重新配置桌面登录。");
+            throw new InvalidOperationException("当前程序的内置 Google 登录配置无效，请安装完整发布版。");
         }
-
-        var storedValue = File.ReadAllText(path).Trim();
-        if (string.IsNullOrWhiteSpace(storedValue))
-        {
-            throw new InvalidOperationException("Google OAuth 客户端配置无效。");
-        }
-
-        const string protectedPrefix = "dpapi:";
-        if (storedValue.StartsWith(protectedPrefix, StringComparison.Ordinal))
-        {
-            return FirebaseSyncSettingsStore.UnprotectRefreshToken(
-                storedValue[protectedPrefix.Length..]);
-        }
-
-        File.WriteAllText(
-            path,
-            protectedPrefix + FirebaseSyncSettingsStore.ProtectRefreshToken(storedValue));
-        return storedValue;
+        return clientSecret;
     }
 }
