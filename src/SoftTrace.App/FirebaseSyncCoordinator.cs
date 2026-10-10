@@ -55,6 +55,8 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
 
     public CloudSyncStatus CurrentStatus => _currentStatus;
 
+    public string? CurrentUserId => _settings.IsConfigured ? _settings.UserId : null;
+
     public void Start()
     {
         if (_loopTask is not null)
@@ -145,10 +147,12 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
             var session = await EnsureSessionAsync(cancellationToken);
             var pushed = await PushPendingAsync(session, cancellationToken);
             var pulled = await PullRemoteAsync(session, cancellationToken);
+            var deviceNames = await SyncDeviceDisplayNamesAsync(session, cancellationToken);
             var completedUtc = DateTimeOffset.UtcNow;
             var detail = pushed == 0 && pulled == 0
                 ? "云端已是最新"
                 : $"已同步：上传 {pushed}，更新 {pulled}";
+            if (deviceNames > 0) detail += $"；设备名称 {deviceNames}";
             SetStatus(new CloudSyncStatus(
                 true,
                 false,
@@ -267,6 +271,31 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
             {
                 break;
             }
+        }
+        return changed;
+    }
+
+    private async Task<int> SyncDeviceDisplayNamesAsync(
+        FirebaseAuthSession session, CancellationToken cancellationToken)
+    {
+        // Claim signed-out edits before merging cloud names. Explicit pending edits stay local until uploaded.
+        await _store.GetPendingDeviceDisplayNamesAsync(session.UserId, cancellationToken);
+        var remote = await _firestoreClient.PullDeviceDisplayNamesAsync(
+            FirebaseConfiguration.ProjectId, session.UserId, session.IdToken, cancellationToken);
+        var changed = await _store.MergeRemoteDeviceDisplayNamesAsync(session.UserId, remote, cancellationToken);
+        var pending = await _store.GetPendingDeviceDisplayNamesAsync(session.UserId, cancellationToken);
+        foreach (var batch in pending.Chunk(200))
+        {
+            await _firestoreClient.PushDeviceDisplayNamesAsync(
+                FirebaseConfiguration.ProjectId, session.UserId, session.IdToken, batch, cancellationToken);
+            await _store.MarkDeviceDisplayNamesSyncedAsync(session.UserId, batch, cancellationToken);
+            changed += batch.Length;
+        }
+        if (pending.Count > 0)
+        {
+            remote = await _firestoreClient.PullDeviceDisplayNamesAsync(
+                FirebaseConfiguration.ProjectId, session.UserId, session.IdToken, cancellationToken);
+            changed += await _store.MergeRemoteDeviceDisplayNamesAsync(session.UserId, remote, cancellationToken);
         }
         return changed;
     }

@@ -1093,8 +1093,9 @@ public partial class MainWindow
 
         try
         {
-            await _store.SetDeviceDisplayNameAsync(device.Id, newName);
+            await _store.SetDeviceDisplayNameAsync(device.Id, newName, _syncCoordinator?.CurrentUserId);
             await RefreshDeviceFiltersAsync();
+            if (_syncCoordinator is not null) await _syncCoordinator.SyncNowAsync();
         }
         catch (Exception exception)
         {

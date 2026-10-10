@@ -1,5 +1,5 @@
 #define MyAppName "Soft Trace"
-#define MyAppVersion "0.3.3"
+#define MyAppVersion "0.3.4"
 #define MyAppPublisher "Jing Wang"
 #define MyAppURL "https://github.com/yuzhounh/soft-trace"
 #define MyAppExeName "SoftTrace.exe"

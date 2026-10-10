@@ -40,3 +40,6 @@ public sealed record SyncActivity(
 public sealed record SyncMarker(string SyncId, DateTimeOffset UpdatedUtc);
 
 public sealed record SyncPullCursor(DateTimeOffset ServerUpdatedUtc, string DocumentName);
+
+public sealed record DeviceDisplayNameChange(
+    string DeviceId, string DisplayName, string Revision, bool IsLegacy = false);
