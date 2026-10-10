@@ -13,7 +13,7 @@ public sealed record FirestorePullPage(
     SyncPullCursor? NextCursor,
     bool HasMore);
 
-public sealed class FirestoreSyncClient(HttpClient httpClient)
+public sealed partial class FirestoreSyncClient(HttpClient httpClient)
 {
     public async Task PushActivitiesAsync(
         string projectId,
