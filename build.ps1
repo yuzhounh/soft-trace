@@ -4,12 +4,36 @@ $projectRoot = $PSScriptRoot
 $dotnetCommand = (Get-Command dotnet -ErrorAction Stop).Source
 $solution = Join-Path $projectRoot 'SoftTrace.sln'
 $appProject = Join-Path $projectRoot 'src\SoftTrace.App\SoftTrace.App.csproj'
-$version = '0.3.2'
+$version = '0.3.3'
 $runtime = 'win-x64'
 $distDirectory = Join-Path $projectRoot 'dist'
 $publishDirectory = Join-Path $distDirectory "SoftTrace-v$version-$runtime"
-$portableExecutable = Join-Path $distDirectory "SoftTrace-v$version-$runtime-Portable.exe"
+$portableArchive = Join-Path $distDirectory "SoftTrace-v$version-$runtime-Portable.zip"
 $installerScript = Join-Path $projectRoot 'installer\SoftTrace.iss'
+
+# Embed the public desktop client configuration, never a user's login tokens.
+$oauthBuildFile = Join-Path $projectRoot '.tools\firebase-oauth-secret.txt'
+if (-not (Test-Path -LiteralPath $oauthBuildFile)) {
+    $legacyOAuthFile = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'SoftTrace\firebase-oauth-secret.txt'
+    if (-not (Test-Path -LiteralPath $legacyOAuthFile)) {
+        throw 'Desktop OAuth configuration is required. Supply .tools\firebase-oauth-secret.txt before building.'
+    }
+    $desktopClientSecret = [System.IO.File]::ReadAllText($legacyOAuthFile).Trim()
+    if ($desktopClientSecret.StartsWith('dpapi:', [System.StringComparison]::Ordinal)) {
+        Add-Type -AssemblyName System.Security
+        $protectedClientBytes = [Convert]::FromBase64String($desktopClientSecret.Substring(6))
+        $desktopClientSecret = [System.Text.Encoding]::UTF8.GetString(
+            [System.Security.Cryptography.ProtectedData]::Unprotect(
+                $protectedClientBytes, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser))
+    }
+    New-Item -ItemType Directory -Path (Split-Path -Parent $oauthBuildFile) -Force | Out-Null
+    [System.IO.File]::WriteAllText($oauthBuildFile, $desktopClientSecret, [System.Text.UTF8Encoding]::new($false))
+}
+$desktopClientSecret = [System.IO.File]::ReadAllText($oauthBuildFile).Trim()
+if ([string]::IsNullOrWhiteSpace($desktopClientSecret) -or $desktopClientSecret.StartsWith('dpapi:')) {
+    throw 'Desktop OAuth build configuration must contain the unencrypted desktop client value.'
+}
+$desktopClientSecret = $null
 
 & $dotnetCommand restore $solution
 if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed with exit code $LASTEXITCODE." }
@@ -28,8 +52,8 @@ if ($LASTEXITCODE -ne 0) { throw "dotnet test failed with exit code $LASTEXITCOD
     -p:DebugSymbols=false
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
 
-Copy-Item -LiteralPath (Join-Path $publishDirectory 'SoftTrace.exe') `
-    -Destination $portableExecutable `
+Compress-Archive -LiteralPath (Join-Path $publishDirectory 'SoftTrace.exe') `
+    -DestinationPath $portableArchive `
     -Force
 
 $innoCandidates = @(
@@ -48,5 +72,5 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $setupExecutable = Join-Path $distDirectory "SoftTrace-v$version-$runtime-Setup.exe"
-Write-Output "Soft Trace v$version portable build: $portableExecutable"
+Write-Output "Soft Trace v$version portable archive: $portableArchive"
 Write-Output "Soft Trace v$version installer: $setupExecutable"
