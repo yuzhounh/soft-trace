@@ -53,6 +53,23 @@ public sealed partial class ActivityStore(string databasePath)
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS device_aliases (
+                user_id TEXT NOT NULL,
+                device_id TEXT NOT NULL,
+                display_name TEXT NOT NULL,
+                revision TEXT NOT NULL,
+                is_pending INTEGER NOT NULL DEFAULT 0,
+                is_legacy INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(user_id, device_id)
+            );
+            INSERT OR IGNORE INTO device_aliases
+                (user_id, device_id, display_name, revision, is_pending, is_legacy)
+            SELECT '', substr(key, length('device_display_name:') + 1), value,
+                   lower(hex(randomblob(16))), 1, 1
+            FROM settings
+            WHERE key LIKE 'device_display_name:%' AND trim(value) <> ''
+              AND NOT EXISTS (SELECT 1 FROM settings WHERE key = 'device_alias_migration_done');
+            INSERT OR IGNORE INTO settings(key, value) VALUES ('device_alias_migration_done', '1');
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
 
@@ -314,18 +331,8 @@ public sealed partial class ActivityStore(string databasePath)
     public Task SetDeviceDisplayNameAsync(
         string deviceId,
         string displayName,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
-        displayName = displayName.Trim();
-        if (displayName.Length > 64)
-        {
-            throw new ArgumentException("设备名称不能超过 64 个字符。", nameof(displayName));
-        }
-
-        return SetSettingAsync($"device_display_name:{deviceId}", displayName, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) =>
+        SetDeviceDisplayNameAsync(deviceId, displayName, userId: null, cancellationToken);
 
     public async Task<IReadOnlyList<DeviceSummary>> GetDevicesAsync(
         CancellationToken cancellationToken = default)

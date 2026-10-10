@@ -20,7 +20,7 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>SoftTrace</AssemblyName>
-    <Version>0.3.3</Version>
+    <Version>0.3.4</Version>
     <Product>SoftTrace</Product>
     <Description>轻量级 Windows 软件使用时间追踪工具</Description>
     <ApplicationIcon>Assets\SoftTrace.ico</ApplicationIcon>
