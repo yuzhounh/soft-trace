@@ -5,6 +5,7 @@ bin/
 obj/
 dist/
 TestResults/
+tmp/
 *.user
 *.suo
 *.db
