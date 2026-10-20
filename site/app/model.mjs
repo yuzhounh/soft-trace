@@ -16,7 +16,7 @@ export function timeline(observations,start,end) {
     lastActivityUtc:apps.length?new Date(Math.max(...apps.map(e=>+new Date(e.endUtc)))).toISOString():null};
 }
 const dateKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-const semesters=[['2024-08-29','2025-01-18','autumn'],['2025-01-18','2025-02-13','winter'],['2025-02-13','2025-07-05','spring'],['2025-07-05','2025-08-27','summer'],['2025-08-27','2026-01-17','autumn'],['2026-01-17','2026-02-25','winter'],['2026-02-25','2026-07-10','spring'],['2026-07-10','2026-08-26','summer'],['2026-08-26','2027-01-25','autumn'],['2027-01-25','2027-02-17','winter'],['2027-02-17','2027-07-19','spring']];
+const monthGroup=date=>{const month=Number(date.slice(5,7));return month===2?'winter':month===7||month===8?'summer':month>=3&&month<=6?'spring':'autumn';};
 export function overview(entries,start,end) {
   end=new Date(end);start=start?new Date(start):new Date(Math.min(+end,...entries.map(e=>+new Date(e.startUtc))));
   if(!Number.isFinite(+start)||!Number.isFinite(+end))throw Error('日期无效');
@@ -37,9 +37,9 @@ export function overview(entries,start,end) {
   const observed=hourDays.filter(d=>d.recordedSeconds>0),count=observed.length;
   const hours=Array.from({length:24},(_,hour)=>{const activeSeconds=observed.reduce((n,d)=>n+d.active[hour],0);return{hour,activeSeconds,recordedSeconds:observed.reduce((n,d)=>n+d.recorded[hour],0),recordedDays:observed.filter(d=>d.recorded[hour]>0).length,averageMinutes:count?activeSeconds/count/60:null};});
   const weekdays=['周一','周二','周三','周四','周五','周六','周日'].map((label,weekday)=>{const ds=observed.filter(d=>d.weekday===weekday),activeSeconds=ds.reduce((n,d)=>n+d.activeSeconds,0);return{weekday,label,activeSeconds,recordedDays:ds.length,averageHours:ds.length?activeSeconds/ds.length/3600:null};});
-  const academicPeriods=[['spring','春季学期'],['autumn','秋季学期'],['winter','寒假轮休期'],['summer','暑假轮休期'],['unknown','待补校历']].map(([kind,label])=>{const ds=observed.filter(d=>(semesters.find(([a,b])=>d.date>=a&&d.date<b)?.[2]||'unknown')===kind),activeSeconds=ds.reduce((n,d)=>n+d.activeSeconds,0);return{kind,label,activeSeconds,recordedDays:ds.length,averageHours:ds.length?activeSeconds/ds.length/3600:null};});
+  const academicPeriods=[['spring','春季学期'],['autumn','秋季学期'],['winter','寒假'],['summer','暑假'],['unknown','未分类']].map(([kind,label])=>{const ds=observed.filter(d=>monthGroup(d.date)===kind),activeSeconds=ds.reduce((n,d)=>n+d.activeSeconds,0);return{kind,label,activeSeconds,recordedDays:ds.length,averageHours:ds.length?activeSeconds/ds.length/3600:null};});
   return{startUtc:start.toISOString(),endUtc:end.toISOString(),days,apps:[...apps.values()].sort((a,b)=>b.seconds-a.seconds),activeSeconds:days.reduce((n,d)=>n+d.activeSeconds,0),idleSeconds:days.reduce((n,d)=>n+d.idleSeconds,0),activeDays:days.filter(d=>d.activeSeconds>0).length,segmentCount:clipped.filter(e=>e.kind==='application').length,
-    patterns:{hours,weekdays,academicPeriods,recordedDays:count,missingDays:days.length-count,recordedSeconds:observed.reduce((n,d)=>n+d.recordedSeconds,0),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,calendarBasis:'信阳师范大学谭山校区教职工报到与轮休日期；未核对日期单列。',calendarSources:[{academicYear:'2024—2025',url:'https://www.xynu.edu.cn/info/1059/16121.htm'},{academicYear:'2025—2026',url:'https://www.xynu.edu.cn/info/1059/1067.htm'},{academicYear:'2026—2027',url:'https://www.xynu.edu.cn/info/1059/7920.htm'}]}};
+    patterns:{hours,weekdays,academicPeriods,recordedDays:count,missingDays:days.length-count,recordedSeconds:observed.reduce((n,d)=>n+d.recordedSeconds,0),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,calendarBasis:'按固定月份划分寒暑假和春秋季学期。',calendarSources:[]}};
 }
 export function normalizeActivity(doc,decode) {
   const e=decode(doc),kind=e.kind||'application',start=kind==='application'?e.startUtc:e.stateStartUtc||e.startUtc,end=kind==='application'?e.endUtc:e.stateEndUtc||e.endUtc;

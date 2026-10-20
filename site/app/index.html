@@ -76,38 +76,22 @@
     <div class="settings-layout">
       <nav class="dialog-tabs" aria-label="设置分类">
         <button data-settings-tab="preferences" aria-selected="true">常规</button>
-        <button data-settings-tab="account" aria-selected="false">账号与同步</button>
-        <button data-settings-tab="devices" aria-selected="false">设备管理</button>
-        <button data-settings-tab="data" aria-selected="false">数据管理</button>
-      </nav>
+        <button data-settings-tab="account" aria-selected="false">账户</button>
+        <button data-settings-tab="devices" aria-selected="false">设备信息</button>      </nav>
       <div class="settings-content">
-        <section data-settings-panel="preferences">
-          <div class="settings-section-heading"><h3>常规</h3><p>当前电脑的采集行为与界面外观。</p></div>
-          <div class="settings-group">
-            <div class="setting-row"><div><h4>采集状态</h4><p id="recording" role="status">正在连接采集程序…</p></div><button id="pause">暂停记录</button></div>
-          </div>
-          <div class="settings-group">
-            <div class="setting-row"><div><label for="idle-minutes">空闲阈值</label><p>连续无键鼠输入超过此时间后，不计入软件用时。</p></div><div class="inline-field"><input id="idle-minutes" type="number" min="1" max="60" step="1"><span>分钟</span></div></div>
-            <div class="setting-row"><div><label for="auto-start">开机自启动</label><p>登录 Windows 后在后台开始记录。</p></div><input id="auto-start" type="checkbox"></div>
-          </div>
-          <div class="settings-group"><div class="setting-row"><div><h4>颜色模式</h4><p>更改页面的浅色或深色外观。</p></div><div class="theme-options" role="group" aria-label="颜色模式"><button type="button" data-theme="light" aria-pressed="false">浅色</button><button type="button" data-theme="dark" aria-pressed="false">深色</button></div></div></div>
-        </section>
+        <section data-settings-panel="preferences"><div class="settings-section-heading"><h3>显示</h3><p>此浏览器的页面外观。</p></div><div class="settings-group"><div class="setting-row"><div><h4>颜色模式</h4><p>更改页面的浅色或深色外观。</p></div><div class="theme-options" role="group" aria-label="颜色模式"><button type="button" data-theme="light">浅色</button><button type="button" data-theme="dark">深色</button></div></div></div></section>
         <section data-settings-panel="account" hidden><p id="cloud-read-status" class="settings-note" role="status">云端查看，数据由原设备同步。</p>
-          <div class="settings-section-heading"><h3>账号与同步</h3><p>使用 Google 账号同步不同电脑的记录。</p></div>
+          <div class="settings-section-heading"><h3>账户</h3><p>查看当前账户已经同步的云端记录。</p></div>
           <div class="settings-group account-settings-group"><div class="account-card"><span class="account-avatar"><img id="account-avatar" alt="账户头像" width="40" height="40" hidden><svg id="account-avatar-fallback" class="arrow" viewBox="0 0 20 20" aria-label="用户"><circle cx="10" cy="6" r="3"/><path d="M4 17v-1a6 6 0 0 1 12 0v1"/></svg></span><div><h3 id="account-name">本地记录</h3><p id="account-email"></p></div></div><div class="settings-group-actions"><button id="account-login">Google 登录</button><button id="account-logout">退出账号</button></div></div>
-          <div class="settings-group"><div class="settings-group-heading"><h4>同步状态</h4><button id="account-sync-now">立即同步</button></div><p id="account-sync"></p><div class="sync-metadata"><p id="account-last-sync"></p><p id="account-updated"></p></div></div>
-          <p class="settings-note">退出账号会保留本地记录；重新登录后可继续同步。</p>
+          <div class="settings-group"><div class="settings-group-heading"><h4>云端记录</h4><button id="account-sync-now">刷新云端记录</button></div><p id="account-sync"></p><div class="sync-metadata"><p id="account-last-sync"></p><p id="account-updated"></p></div></div>
+          <p class="settings-note">退出登录不会删除云端记录。</p>
         </section>
         <section data-settings-panel="devices" hidden>
-          <div class="settings-section-heading"><h3>设备管理</h3><p>为每台电脑设置容易辨认的显示名称。</p></div>
+          <div class="settings-section-heading"><h3>设备管理</h3><p>查看当前账户的已同步设备。</p></div>
           <div id="settings-devices"></div>
-          <p class="settings-note">仅修改显示名称，设备身份、Windows 计算机名和历史记录归属保持不变。</p>
+          <p class="settings-note">设备名称和采集设置请在原电脑的 Soft Trace 中修改。</p>
         </section>
-        <section data-settings-panel="data" hidden>
-          <div class="settings-section-heading"><h3>数据管理</h3><p>导出记录留存，或导入已有的活动数据。</p></div>
-          <div class="settings-group"><h4>导出记录</h4><p class="settings-description">选择需要导出的日期和设备，保存为 SoftTrace JSON 文件。</p><div class="settings-fields export-fields"><label>日期范围<select id="export-scope"><option value="all">全部日期</option><option value="day">当前查看日期</option><option value="view">当前视图范围</option></select></label><label>设备<select id="export-device"></select></label><button id="export-data">下载 JSON</button></div></div>
-          <div class="settings-group"><h4>导入记录</h4><p class="settings-description">支持 SoftTrace JSON、ManicTime ZIP 或 ManicTimeReports.db，单个文件不超过 256 MB。</p><div class="import-field"><span>选择数据文件</span><div class="import-controls"><div class="file-picker"><input id="import-file" type="file" accept=".json,.zip,.db" hidden><button id="choose-import-file" type="button">选择文件</button><span id="import-file-name" role="status">未选择文件</span></div><button id="import-data">导入文件</button></div></div><p class="settings-note">已有记录优先，重叠时段不会重复累计。</p></div>
-        </section>
+
       </div>
     </div>
   </dialog>

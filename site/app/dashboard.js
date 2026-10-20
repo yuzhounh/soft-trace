@@ -35,14 +35,10 @@
     try {
       const status=await api('/api/status'); state.status=status;
       document.dispatchEvent(new CustomEvent('softtrace-status',{detail:status}));
-      const current=$('device').value || status.localDeviceId;
+      const current=$('device').value || localStorage.getItem('softtrace-web-device-'+CloudAuth.requireUser().uid) || status.localDeviceId;
       $('device').innerHTML=status.devices.map(d=>`<option value="${esc(d.id)}">${esc(d.name)}</option>`).join('');
       $('device').value=current;
-      if (!$('device').value) $('device').value=status.localDeviceId;
-      $('pause').textContent=status.capture.isPaused?'继续记录':'暂停记录';
-      $('recording').textContent='云端查看';
-      $('recording').classList.toggle('live',!status.capture.isPaused&&!status.capture.isIdle);
-      for(const option of $('view-mode').options)option.disabled=!['day','yesterday'].includes(option.value)&&!status.features?.overview;
+      if (!$('device').value) $('device').value=status.localDeviceId;      for(const option of $('view-mode').options)option.disabled=!['day','yesterday'].includes(option.value)&&!status.features?.overview;
       $('view-mode').title=status.features?.overview?'选择时间范围':'周、月、季度、年和全部时间视图需要更新托盘程序后启用';
       if(!window.softTrace.overview.isDay()){
         await window.softTrace.overview.load(status,revision);
@@ -190,7 +186,7 @@
   $('range-to').value=$('date').value;const initialFrom=new Date();initialFrom.setDate(initialFrom.getDate()-6);$('range-from').value=localDate(initialFrom);
   $('previous').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);
   $('today').onclick=()=>{if($('view-mode').value==='yesterday')$('view-mode').value='day';$('date').value=localDate(new Date());window.softTrace.overview.setMode();changeDay();};
-  $('date').onchange=()=>{if($('view-mode').value==='yesterday')$('view-mode').value='day';window.softTrace.overview.setMode();changeDay();};$('device').onchange=changeDay;$('refresh').onclick=()=>load();
+  $('date').onchange=()=>{if($('view-mode').value==='yesterday')$('view-mode').value='day';window.softTrace.overview.setMode();changeDay();};$('device').onchange=()=>{localStorage.setItem('softtrace-web-device-'+CloudAuth.requireUser().uid,$('device').value);changeDay();};$('refresh').onclick=()=>{window.SoftTraceWeb.invalidate();load();};
   $('zoom').onchange=()=>{if($('zoom').value!=='range')clearTimeRange($('zoom').value);renderTimeline();renderRows();};
   $('timeline-reset').onclick=()=>{cancelTimelineDrag();clearTimeRange();renderTimeline();renderRows();};
   for(const id of ['range-from','range-to'])$(id).onchange=()=>{document.dispatchEvent(new Event('softtrace-dates'));changeDay();};
@@ -199,9 +195,7 @@
   $('clear').onclick=()=>{resetFilters();renderRows();renderApps();renderTimeline();};
   for(const id of ['state-track','app-track','rows']){$(id).onclick=event=>{if(id!=='rows'&&event.detail!==0)return;const target=event.target.closest('[data-id]');if(target)select(target.dataset.id,id);};}
   $('rows').onkeydown=event=>{if(event.key==='Enter'||event.key===' '){const row=event.target.closest('[data-id]');if(row){event.preventDefault();select(row.dataset.id,'rows');}}};
-  $('jump').onclick=()=>{const value=$('jump-time').value;if(!value)return;const t=+new Date(`${$('date').value}T${value}`);const entry=state.rows.find(e=>+new Date(e.startUtc)<=t&&+new Date(e.endUtc)>t);if(entry){if(state.timeRange&&(t<state.timeRange.start||t>=state.timeRange.end))clearTimeRange();select(entry.id);}else $('selection').textContent='该时间尚无已保存的记录。';};
-  $('pause').onclick=async()=>{const button=$('pause');button.disabled=true;try{await api('/api/pause','POST');await load();}catch(error){showError(error.message);}finally{button.disabled=false;}};
-  $('back-top').onclick=()=>window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  $('jump').onclick=()=>{const value=$('jump-time').value;if(!value)return;const t=+new Date(`${$('date').value}T${value}`);const entry=state.rows.find(e=>+new Date(e.startUtc)<=t&&+new Date(e.endUtc)>t);if(entry){if(state.timeRange&&(t<state.timeRange.start||t>=state.timeRange.end))clearTimeRange();select(entry.id);}else $('selection').textContent='该时间尚无已保存的记录。';};  $('back-top').onclick=()=>window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   function showTooltip(entry,x,y) {
     const tip=$('timeline-tooltip');
     if(!entry){tip.hidden=true;return;}
