@@ -9,9 +9,10 @@ const logo=project==='soft-trace'?'src/SoftTrace.App/Assets/SoftTrace-Source.png
 async function walk(directory,prefix=''){const files=[];for(const e of await readdir(directory,{withFileTypes:true})){if(e.name.startsWith('.')||(!prefix&&['dist','firebase.json'].includes(e.name)))continue;const path=prefix+e.name;if(e.isDirectory())files.push(...await walk(resolve(directory,e.name),path+'/'));else{if(!/\.(html|css|js|mjs|json|png|svg|ico)$/.test(e.name))throw Error('Unexpected public input: '+path);files.push(path);}}return files;}
 const files=await walk(source);
 await mkdir(out,{recursive:true});
-for(const name of files){const path=resolve(out,name);if(!path.startsWith(out+'/')&&!path.startsWith(out+'\\'))throw Error('Invalid output path');await mkdir(dirname(path),{recursive:true});await copyFile(resolve(source,name),path);}
+for(const name of files){const path=resolve(out,name);if(!path.startsWith(out+'/')&&!path.startsWith(out+'\\'))throw Error('Invalid output path');await mkdir(dirname(path),{recursive:true});if(/\.(html|css|js|mjs|json|svg)$/.test(name))await writeFile(path,(await readFile(resolve(source,name),'utf8')).replace(/\r\n/g,'\n'));else await copyFile(resolve(source,name),path);}
 await copyFile(resolve(root,logo),resolve(out,'logo.png'));
 if(!files.includes('logo.png'))files.push('logo.png');
+files.sort();
 const names=new Set(files);
 for(const name of files.filter(f=>f.endsWith('.html'))){const html=await readFile(resolve(out,name),'utf8');if(!/<html[^>]*lang="zh-CN"/.test(html)||!html.includes('name="viewport"'))throw Error('Missing document metadata: '+name);for(const m of html.matchAll(/(?:href|src)="([^"]+)"/g)){const url=m[1];if(!url||/^(?:https?:|data:|#|\/\/)/.test(url))continue;const link=new URL(url,'https://website.invalid/'+name);let path=decodeURIComponent(link.pathname).slice(1);if(!path||path.endsWith('/'))path+='index.html';if(!names.has(path))throw Error('Missing local resource: '+name+' -> '+url);}}
 for(const name of files.filter(f=>/\.(m?js)$/.test(f)))execFileSync(process.execPath,['--check',resolve(out,name)],{stdio:'pipe'});

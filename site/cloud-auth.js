@@ -16,7 +16,7 @@
     const gate=document.getElementById('auth-gate');if(gate){document.body.classList.toggle('auth-wait',!next);gate.hidden=!!next;}
     const message=document.getElementById('auth-message');if(message?.textContent==='正在读取登录状态…')message.textContent=next?'':'使用与原设备相同的 Google 账户。';
     document.querySelectorAll('[data-cloud-email]').forEach(el=>{el.textContent=next?.email||'';});
-    document.querySelectorAll('[data-cloud-login]').forEach(el=>{el.textContent=next?'进入我的数据':'Google 登录';});
+    document.querySelectorAll('[data-cloud-login]').forEach(el=>{el.textContent=el.dataset.cloudLabel||(next?'进入我的数据':'Google 登录');});
     for(const fn of listeners)fn(next);
   }
   async function login() {
