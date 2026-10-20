@@ -13,7 +13,7 @@ for(const name of files){const path=resolve(out,name);if(!path.startsWith(out+'/
 await copyFile(resolve(root,logo),resolve(out,'logo.png'));
 if(!files.includes('logo.png'))files.push('logo.png');
 const names=new Set(files);
-for(const name of files.filter(f=>f.endsWith('.html'))){const html=await readFile(resolve(out,name),'utf8');if(!/<html[^>]*lang="zh-CN"/.test(html)||!html.includes('name="viewport"'))throw Error('Missing document metadata: '+name);for(const m of html.matchAll(/(?:href|src)="([^"]+)"/g)){const url=m[1];if(!url||/^(?:https?:|data:|#|\/\/)/.test(url))continue;const link=new URL(url,'https://website.invalid/'+name);let path=decodeURIComponent(link.pathname).slice(1);if(path.endsWith('/'))path+='index.html';if(!names.has(path))throw Error('Missing local resource: '+name+' -> '+url);}}
+for(const name of files.filter(f=>f.endsWith('.html'))){const html=await readFile(resolve(out,name),'utf8');if(!/<html[^>]*lang="zh-CN"/.test(html)||!html.includes('name="viewport"'))throw Error('Missing document metadata: '+name);for(const m of html.matchAll(/(?:href|src)="([^"]+)"/g)){const url=m[1];if(!url||/^(?:https?:|data:|#|\/\/)/.test(url))continue;const link=new URL(url,'https://website.invalid/'+name);let path=decodeURIComponent(link.pathname).slice(1);if(!path||path.endsWith('/'))path+='index.html';if(!names.has(path))throw Error('Missing local resource: '+name+' -> '+url);}}
 for(const name of files.filter(f=>/\.(m?js)$/.test(f)))execFileSync(process.execPath,['--check',resolve(out,name)],{stdio:'pipe'});
 const sourceCommit=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),hashes={};
 for(const name of files)hashes[name]=createHash('sha256').update(await readFile(resolve(out,name))).digest('hex');
