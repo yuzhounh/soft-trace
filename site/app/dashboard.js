@@ -182,7 +182,7 @@
     else if(mode==='year')date.setFullYear(date.getFullYear()+delta,0,1);
     else date.setDate(date.getDate()+delta);
     $('date').value=localDate(date)>localDate(new Date())?localDate(new Date()):localDate(date);window.softTrace.overview.setMode();changeDay();};
-  $('date').value=localDate(new Date());$('date').max=$('date').value;
+  $('view-mode').value='day';$('date').value=localDate(new Date());$('date').max=$('date').value;
   $('range-to').value=$('date').value;const initialFrom=new Date();initialFrom.setDate(initialFrom.getDate()-6);$('range-from').value=localDate(initialFrom);
   $('previous').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);
   $('today').onclick=()=>{if($('view-mode').value==='yesterday')$('view-mode').value='day';$('date').value=localDate(new Date());window.softTrace.overview.setMode();changeDay();};
