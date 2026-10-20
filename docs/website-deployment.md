@@ -15,15 +15,17 @@
 
 ## 当前发布状态（2026-10-20）
 
-网站源码提交：`d7b55f4ab605a5af60f0528c55699913ea9daa32`。
+网站源码提交：`f907a06d764a1d6f8693206ef2c3379abb7dc532`（默认今日、按范围加载）。
 
-- GitHub Pages：https://yuzhounh.github.io/soft-trace/；工作流 `39376890939` 成功。
-- Cloudflare Pages：https://soft-trace.pages.dev/；部署 `479316f3`。
-- Vercel：https://soft-trace.vercel.app/；部署 `dpl_BVVt2Yak9QN5pJxSoqRxeqe5ovDn` Ready。
+- GitHub Pages：https://yuzhounh.github.io/soft-trace/；工作流 `39415175512` 成功，包含网站测试和构建。
+- Cloudflare Pages：https://soft-trace.pages.dev/；部署 `54da81aa`。
+- Vercel：https://soft-trace.vercel.app/；部署 `dpl_2MpmaipGWZefsPqhy5dWedwDDamD` Ready。
 - Firebase Hosting：https://soft-trace.web.app/；与个人主页同属 Firebase 工程，但仅发布 `soft-trace` 站点。
-- Netlify：https://soft-trace.netlify.app/；站点 `dc73b9a9-126a-44eb-bbbb-155329403219` 已注册，未连接 Git、未部署。用户仅批准注册例外，部署仍暂停至 2026-10-21 15:00。
+- Netlify：https://soft-trace.netlify.app/；站点 `dc73b9a9-126a-44eb-bbbb-155329403219` 已注册，未连接 Git、未部署。保持原定北京时间 2026-10-21 15:05 一次性发布安排，执行前核对额度及滚动 168 小时窗口。
 
-四个正式首页、隐私页、CSS、图标和发布清单均核验通过，共 76 项公开文件与本地构建一致（Soft Trace 每入口 19 项、Time Lens 每入口 21 项；含发布清单）。平台回执及验证结果保存于 `results/website/`。GitHub Pages 沿用现有仓库路径，没有重命名仓库或创建第二个源码仓库。
+本次四个平台各核验首页、app 入口、范围读取与展示脚本、账户设置、模型模块、认证脚本、公开客户端配置及发布清单，40 项检查通过，模型模块 MIME 正确。结果保存于 `results/website/verification-demand.json`，回执在同目录 `*-demand.log`。未扫描个人活动记录来验收发布，也未修改数据库或认证配置。
+
+在线版启动时固定今日视图，数据请求省略范围时也默认今天；只有显式选择“全部时间”才发出完整历史查询。切换日期/周期/自定义范围后加载所需记录，重叠的有效缓存用于填补已覆盖区间，同一范围切换设备或并发请求复用读取。刷新改为有起止范围的查询，避免读取所有近期更新的历史；缓存过期或手动刷新仍需重读所选范围，不能保证不消耗额度。当前日的缓存跨午夜后不会误当作完整历史日。账号切换隔离旧请求；本次没有修改或更新本地程序。
 
 ## Google 登录与云端仪表盘
 
@@ -41,7 +43,7 @@ Google 登录由用户在真实浏览器完成；Soft Trace 已展示云端活�
 
 Time Lens 在相同 Home PC 设备、2026-10-01 至 2026-10-19 的 19 个完整日期逐日核对：本地和云端时长、访问次数均一致，总时长均为 251200955 毫秒，差值为 0。网页默认“所有设备”和本地“仅本机”不能直接比较，已按同设备对齐；网页设备选择按账户记忆。
 
-Soft Trace 本地已读取相同闭合日期范围的 27234 条区间、2 台设备。云端返回 HTTP 429 / RESOURCE_EXHAUSTED / Quota exceeded，故本轮未完成其逐日数值一致性验证，也未将其记为通过。已修正当前周期结束时间导致缓存失效的问题，同一范围切换设备复用读取，后续刷新使用更新时间增量查询，额度错误后暂停自动读取。首次载入很长历史范围仍会有较大的读取量，不能把额度恢复等同于无限历史查询能力。
+较早一致性核对中，Soft Trace 本地已读取相同闭合日期范围的 27234 条区间、2 台设备；云端返回 HTTP 429 / RESOURCE_EXHAUSTED / Quota exceeded，故没有完成其逐日数值一致性验证。随后修正当前周期结束时间导致缓存失效的问题；本次发布进一步改为按选定起止范围读取及刷新，复用重叠缓存，移除跨日期的更新时间增量查询。额度错误后仍暂停自动读取。显式查看很长历史范围仍会有较大的读取量，不能把额度恢复等同于无限历史查询能力。
 
 网页设置仅保留页面外观/语言、账户及云端刷新、只读设备信息。移除或隐藏采集状态、空闲阈值、Windows 自启动、原始记录导入/删除和设备改名；原程序/扩展继续管理这些本地功能。
 
