@@ -21,6 +21,19 @@
             "value": "strict-origin-when-cross-origin"
           }
         ]
+      },
+      {
+        "regex": "^/(?:$|index\\.html$|privacy\\.html$|app(?:/.*)?$)",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://www.googleapis.com https://www.gstatic.com https://*.firebaseapp.com; frame-src https://*.firebaseapp.com https://*.web.app https://accounts.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+          },
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin-allow-popups"
+          }
+        ]
       }
     ]
   }
