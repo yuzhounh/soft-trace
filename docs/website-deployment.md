@@ -12,3 +12,15 @@
 - 普通 GitHub 推送提交保留 `[skip netlify]`。
 
 现有应用功能改动未纳入本次网站提交；网站下载链接指向现有公开发行版。
+
+## 当前发布状态（2026-10-20）
+
+网站源码提交：`056c898bea3afba494de66483ffa6c0f20737249`。
+
+- GitHub Pages：https://yuzhounh.github.io/soft-trace/；工作流 `39373854031` 成功。
+- Cloudflare Pages：https://soft-trace.pages.dev/；部署 `7c3777cf`。
+- Vercel：https://soft-trace.vercel.app/；部署 `dpl_EYSxA98ZiYjJjRQZLMTMcUfhznsc` Ready。
+- Firebase Hosting：https://soft-trace.web.app/；与个人主页同属 Firebase 工程，但仅发布 `soft-trace` 站点。
+- Netlify：https://soft-trace.netlify.app/；站点 `dc73b9a9-126a-44eb-bbbb-155329403219` 已注册，未连接 Git、未部署。用户仅批准注册例外，部署仍暂停至 2026-10-21 15:00。
+
+四个正式首页、隐私页、CSS、图标和发布清单均核验通过，共 20 项资源哈希与本地构建一致。平台回执及验证结果保存于 `results/website/`。GitHub Pages 沿用现有仓库路径，没有重命名仓库或创建第二个源码仓库。
