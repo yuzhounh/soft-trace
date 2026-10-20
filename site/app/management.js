@@ -32,5 +32,5 @@
     finally{button.disabled=false;}
   };
   document.addEventListener('softtrace-status',event=>{account();populate(event.detail);});
-  CloudAuth.onUser(()=>account());
+  document.addEventListener('DOMContentLoaded',()=>CloudAuth.onUser(()=>account()),{once:true});
 })();
