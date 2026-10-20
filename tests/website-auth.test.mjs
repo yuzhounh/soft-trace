@@ -17,3 +17,15 @@ test('the website client rejects cross-account and mutation requests before netw
   assert.equal(calls,baseline);
   await api.firestore('users/owner-a/devices');assert.equal(calls,baseline+1);
 });
+
+test('quota errors stop repeated automatic reads',async()=>{
+ let reads=0;
+ const auth={setPersistence:async()=>{},onAuthStateChanged(fn){fn({uid:'a',getIdToken:async()=>'test'});}};
+ const factory=()=>auth;factory.Auth={Persistence:{LOCAL:'local'}};
+ const context=vm.createContext({URL,Promise,Set,Map,AbortSignal,document:{currentScript:{src:'https://website.invalid/cloud-auth.js'},body:{classList:{toggle(){}}},getElementById(){return null;},querySelectorAll(){return[];}},window:{},firebase:{initializeApp(){},auth:factory},fetch:async url=>String(url).endsWith('firebase-client.json')?{json:async()=>({projectId:'test'})}:{status:429,ok:false,json:async()=>{reads++;return[{error:{status:'RESOURCE_EXHAUSTED'}}];}}});
+ vm.runInContext(await readFile(new URL('../site/cloud-auth.js',import.meta.url),'utf8'),context);
+ const api=context.window.CloudAuth;await api.ready;
+ await assert.rejects(api.firestore('users/a/devices'),/额度/);
+ await assert.rejects(api.firestore('users/a/devices'),/额度/);
+ assert.equal(reads,1);
+});

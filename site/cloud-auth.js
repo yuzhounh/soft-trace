@@ -1,7 +1,7 @@
 'use strict';
 (() => {
   const root = new URL('.', document.currentScript.src);
-  let user = null, auth, config;
+  let user = null, auth, config, retryAt=0;
   const listeners = new Set();
   let resolveReady, rejectReady;
   const ready = new Promise((yes,no)=>{resolveReady=yes;rejectReady=no;});
@@ -12,6 +12,7 @@
     'auth/network-request-failed':'无法连接 Google 登录服务，请检查网络后重试。'
   }[error.code] || error.message || '操作未完成，请重试。');
   function notify(next) {
+    if(user?.uid!==next?.uid)retryAt=0;
     user=next;
     const gate=document.getElementById('auth-gate');if(gate){document.body.classList.toggle('auth-wait',!next);gate.hidden=!!next;}
     const message=document.getElementById('auth-message');if(message?.textContent==='正在读取登录状态…')message.textContent=next?'':'使用与原设备相同的 Google 账户。';
@@ -32,6 +33,7 @@
     await ready;const current=requireUser(),uid=current.uid;
     if(!(path.startsWith('users/'+uid+'/')||path==='users/'+uid+':runQuery')||path.split(/[/?]/).some(p=>p==='..'||p==='.'))throw new Error('禁止跨账户读取。');
     if(method!=='GET'&&!(method==='POST'&&path.endsWith(':runQuery')))throw new Error('网页仅支持读取云端记录。');
+    if(Date.now()<retryAt)throw new Error('云端读取额度暂时达到上限，请稍后再试。');
     const token=await current.getIdToken();
     const response=await fetch('https://firestore.googleapis.com/v1/projects/'+config.projectId+'/databases/(default)/documents/'+path,{
       method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30000)
@@ -39,7 +41,9 @@
     if(user?.uid!==uid)throw new Error('账户已切换，请重新加载。');
     if(optional&&response.status===404)return null;
     const data=await response.json();
-    if(!response.ok)throw new Error(data.error?.status==='PERMISSION_DENIED'?'当前账户无权读取这些云端记录。':data.error?.message||'云端读取失败。');
+    const error=Array.isArray(data)?data.find(row=>row.error)?.error:data.error;
+    if(response.status===429){retryAt=Date.now()+15*60*1000;throw new Error('云端读取额度暂时达到上限，请稍后再试。');}
+    if(!response.ok)throw new Error(error?.status==='PERMISSION_DENIED'?'当前账户无权读取这些云端记录。':error?.message||'云端读取失败。');
     return data;
   }
   async function collection(path) {

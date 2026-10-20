@@ -53,11 +53,10 @@
     $('pattern-content').innerHTML=rows(summary.weekdays);
   }
   function renderAcademic(){
-    $('pattern-description').textContent='按各学期及寒暑假中当天有任何记录的日期计算日均小时数；有记录但未实际使用的日期按 0 计入，整天无记录的日期不参与。各阶段分别计算，不直接比较总量。';
-    const groups=summary.academicPeriods.filter(period=>period.kind!=='unknown'||period.recordedDays>0);
-    const unknown=groups.find(period=>period.kind==='unknown');
-    const sources=summary.calendarSources.filter(source=>source.url.startsWith('https://www.xynu.edu.cn/'));
-    $('pattern-content').innerHTML=rows(groups)+`<p class="pattern-detail">${esc(summary.calendarBasis)}${unknown?.recordedDays?` ${unknown.recordedDays} 个记录日尚未匹配到已核对校历，单独列出。`:''}</p><div class="pattern-sources"><span>官方校历：</span>${sources.map(source=>`<a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(source.academicYear)}</a>`).join('')}</div>`;
+    if(!summary.calendarBasis?.includes('固定月份')){$('pattern-description').textContent='月份分组需更新本机程序后生效。';$('pattern-content').innerHTML='';return;}
+    $('pattern-description').textContent='按固定月份分组，并按各组有记录日计算日均使用时长。';
+    const groups=summary.academicPeriods.filter(period=>period.kind!=='unknown');
+    $('pattern-content').innerHTML=rows(groups)+'<p class="pattern-detail">寒假：2 月；暑假：7–8 月；春季学期：3–6 月；秋季学期：9 月至次年 1 月。</p>';
   }
   for(const button of document.querySelectorAll('[data-pattern-tab]')){
     button.onclick=()=>{active=button.dataset.patternTab;render(summary,$('view-mode').value,window.softTracePatterns.span);};

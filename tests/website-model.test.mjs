@@ -16,3 +16,10 @@ test('periods retain empty dates without counting them as recorded days',()=>{
  const result=overview([entry('x',start.toISOString(),stop.toISOString())],start,end);
  assert.equal(result.days.length,2);assert.equal(result.activeDays,1);assert.equal(result.patterns.recordedDays,1);assert.equal(result.patterns.missingDays,1);assert.equal(result.patterns.hours.reduce((n,h)=>n+h.activeSeconds,0),3600);
 });
+
+test('season comparisons use fixed months without school calendar sources',()=>{
+ const at=(month,hours)=>entry('m'+month,new Date(2026,month-1,1).toISOString(),new Date(2026,month-1,1,hours).toISOString());
+ const result=overview([at(1,3),at(2,1),at(3,4),at(7,2)],new Date(2026,0,1),new Date(2026,8,1));
+ for(const [kind,hours]of [['autumn',3],['winter',1],['spring',4],['summer',2]])assert.equal(result.patterns.academicPeriods.find(p=>p.kind===kind).averageHours,hours);
+ assert.equal(result.patterns.calendarSources.length,0);
+});
