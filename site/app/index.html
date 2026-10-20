@@ -16,7 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-auth-compat.js" defer></script>
 <script src="../cloud-auth.js" defer></script><script src="cloud-bridge.js" defer></script><link rel="stylesheet" href="../cloud.css"></head>
-<body class="cloud-view auth-wait"><div id="auth-gate" class="auth-gate"><section class="auth-card"><img src="../logo.png" alt="" width="64" height="64"><h1>Soft Trace</h1><p>登录 Google 账户，查看原设备已同步的使用记录。</p><button data-cloud-login>使用 Google 登录</button><p id="auth-message" role="status">正在读取登录状态…</p><a href="../">返回网站首页</a></section></div><div class="cloud-session"><span>云端查看 · 数据由原设备同步</span><span id="cloud-read-status" role="status"></span><span data-cloud-email></span><button data-cloud-logout>退出账户</button></div>
+<body class="cloud-view auth-wait"><div id="auth-gate" class="auth-gate"><section class="auth-card"><img src="../logo.png" alt="" width="64" height="64"><h1>Soft Trace</h1><p>登录 Google 账户，查看原设备已同步的使用记录。</p><button data-cloud-login>使用 Google 登录</button><p id="auth-message" role="status">正在读取登录状态…</p><a href="../">返回网站首页</a></section></div>
   <header class="topbar">
     <a class="brand" href="#" aria-label="SoftTrace 首页"><img class="brand-logo" src="brand.ico" alt="">SoftTrace</a>
     <div class="actions"><button id="manage" class="icon-button" title="设置" aria-label="设置"><svg class="arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M8 2h4l.5 2a7 7 0 0 1 1 .6l2-.6 2 3.5L16 9a7 7 0 0 1 0 2l1.5 1.5-2 3.5-2-.6a7 7 0 0 1-1 .6l-.5 2H8l-.5-2a7 7 0 0 1-1-.6l-2 .6-2-3.5L4 11a7 7 0 0 1 0-2L2.5 7.5 4.5 4l2 .6a7 7 0 0 1 1-.6Z"/><circle cx="10" cy="10" r="2.5"/></svg></button></div>
@@ -92,7 +92,7 @@
           </div>
           <div class="settings-group"><div class="setting-row"><div><h4>颜色模式</h4><p>更改页面的浅色或深色外观。</p></div><div class="theme-options" role="group" aria-label="颜色模式"><button type="button" data-theme="light" aria-pressed="false">浅色</button><button type="button" data-theme="dark" aria-pressed="false">深色</button></div></div></div>
         </section>
-        <section data-settings-panel="account" hidden>
+        <section data-settings-panel="account" hidden><p id="cloud-read-status" class="settings-note" role="status">云端查看，数据由原设备同步。</p>
           <div class="settings-section-heading"><h3>账号与同步</h3><p>使用 Google 账号同步不同电脑的记录。</p></div>
           <div class="settings-group account-settings-group"><div class="account-card"><span class="account-avatar"><img id="account-avatar" alt="账户头像" width="40" height="40" hidden><svg id="account-avatar-fallback" class="arrow" viewBox="0 0 20 20" aria-label="用户"><circle cx="10" cy="6" r="3"/><path d="M4 17v-1a6 6 0 0 1 12 0v1"/></svg></span><div><h3 id="account-name">本地记录</h3><p id="account-email"></p></div></div><div class="settings-group-actions"><button id="account-login">Google 登录</button><button id="account-logout">退出账号</button></div></div>
           <div class="settings-group"><div class="settings-group-heading"><h4>同步状态</h4><button id="account-sync-now">立即同步</button></div><p id="account-sync"></p><div class="sync-metadata"><p id="account-last-sync"></p><p id="account-updated"></p></div></div>
