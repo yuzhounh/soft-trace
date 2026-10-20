@@ -148,7 +148,7 @@
     setMode();
     if(!status.features?.overview)throw new Error('请更新托盘程序后使用周期视图。');
     const selected=range(),query=new URLSearchParams({device:$('device').value,zone:Intl.DateTimeFormat().resolvedOptions().timeZone});
-    if(selected.mode!=='all'){query.set('start',selected.start.toISOString());query.set('end',selected.end.toISOString());}
+    if(selected.mode!=='all'){query.set('start',selected.start.toISOString());query.set('end',selected.end.toISOString());}else query.set('all','1');
     const data=await api(`/api/overview?${query}`);
     if(revision!==client.revision())return;
     $('period-active').textContent=duration(data.activeSeconds);
