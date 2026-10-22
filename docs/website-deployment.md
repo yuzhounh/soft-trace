@@ -8,12 +8,12 @@
 - GitHub Pages：工作流 `.github/workflows/pages.yml`，只上传静态发布目录。
 - Cloudflare Pages、Vercel：发布同一静态目录；先确认账号、项目及原名地址归属。
 - Firebase：`firebase deploy --config site/firebase.json --only hosting --project soft-trace`；仅操作 Hosting 站点 `soft-trace`，不修改数据库规则、认证或其他站点。
-- Netlify：只注册独立站点且不连接 Git 自动构建。2026-10-21 15:00 Asia/Shanghai 前不部署；之后遵守每项目滚动 168 小时最多一次提交，记录以维护 Hub 的 `review/netlify_deployments.md` 为准。
+- Netlify：使用独立站点，不连接 Git 自动构建；遵守每项目滚动 168 小时最多一次提交，记录以维护 Hub 的 `review/netlify_deployments.md` 为准。
 - 普通 GitHub 推送提交保留 `[skip netlify]`。
 
 现有应用功能改动未纳入本次网站提交；网站下载链接指向现有公开发行版。
 
-## 当前发布状态（2026-10-20）
+## 当前发布状态（2026-10-22）
 
 网站源码提交：`f907a06d764a1d6f8693206ef2c3379abb7dc532`（默认今日、按范围加载）。
 
@@ -21,11 +21,19 @@
 - Cloudflare Pages：https://soft-trace.pages.dev/；部署 `54da81aa`。
 - Vercel：https://soft-trace.vercel.app/；部署 `dpl_2MpmaipGWZefsPqhy5dWedwDDamD` Ready。
 - Firebase Hosting：https://soft-trace.web.app/；与个人主页同属 Firebase 工程，但仅发布 `soft-trace` 站点。
-- Netlify：https://soft-trace.netlify.app/；站点 `dc73b9a9-126a-44eb-bbbb-155329403219` 已注册，未连接 Git、未部署。保持原定北京时间 2026-10-21 15:05 一次性发布安排，执行前核对额度及滚动 168 小时窗口。
+- Netlify：https://soft-trace.netlify.app/；站点 `dc73b9a9-126a-44eb-bbbb-155329403219` 已首次发布，部署 `6ad961304c1fdb5013b2f104` READY；平台创建时间 2026-10-22 09:04:48.706 +08:00，下次最早提交 2026-10-29 09:04:48.706 +08:00。未连接 Git 自动构建。
 
 本次四个平台各核验首页、app 入口、范围读取与展示脚本、账户设置、模型模块、认证脚本、公开客户端配置及发布清单，40 项检查通过，模型模块 MIME 正确。结果保存于 `results/website/verification-demand.json`，回执在同目录 `*-demand.log`。未扫描个人活动记录来验收发布，也未修改数据库或认证配置。
 
 在线版启动时固定今日视图，数据请求省略范围时也默认今天；只有显式选择“全部时间”才发出完整历史查询。切换日期/周期/自定义范围后加载所需记录，重叠的有效缓存用于填补已覆盖区间，同一范围切换设备或并发请求复用读取。刷新改为有起止范围的查询，避免读取所有近期更新的历史；缓存过期或手动刷新仍需重读所选范围，不能保证不消耗额度。当前日的缓存跨午夜后不会误当作完整历史日。账号切换隔离旧请求；本次没有修改或更新本地程序。
+
+## Netlify 首次发布（2026-10-22）
+
+原定 10 月 21 日 15:05 的任务延迟执行，实际平台发布时间为 2026-10-22 09:04:51.662 +08:00。复用网站提交 `f907a06d764a1d6f8693206ef2c3379abb7dc532` 的已验证构建，无重建、无版本变更；每站仅提交一次。发布前确认团队 yuzhounh 额度 300、已用 0，且两个新站点均无既往部署/构建提交。
+
+19 项公开文件通过核验；脚本、样式、公开配置及 release.json 与构建 SHA-256 一致。Netlify 对 HTML 注入免费站点说明和工具条，并将 privacy.html 链接美化为 /privacy；严格剥离这些已识别平台变换后，HTML 与源码一致。隔离空白浏览器验证未登录只显示登录界面，私有 Firestore 请求为 0。未修改数据库或本地程序/扩展，没有收费升级。
+
+一次性任务已删除，不再自动重试。滚动 168 小时窗口以本段记录及维护 Hub review/netlify_deployments.md 为准。发布回执与核验结果在 results/website/netlify-release.json。
 
 ## Google 登录与云端仪表盘
 
