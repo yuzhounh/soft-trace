@@ -1,5 +1,5 @@
 #define MyAppName "Soft Trace"
-#define MyAppVersion "0.3.4"
+#define MyAppVersion "0.8.4"
 #define MyAppPublisher "Jing Wang"
 #define MyAppURL "https://github.com/yuzhounh/soft-trace"
 #define MyAppExeName "SoftTrace.exe"
@@ -26,7 +26,8 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
-CloseApplications=yes
+CloseApplications=no
+AppMutex=SoftTrace.SingleInstance
 CloseApplicationsFilter={#MyAppExeName}
 RestartApplications=no
 VersionInfoVersion={#MyAppVersion}.0
@@ -38,7 +39,7 @@ VersionInfoProductName={#MyAppName}
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加快捷方式："; Flags: unchecked
 
 [Files]
-Source: "{#PublishDirectory}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PublishDirectory}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

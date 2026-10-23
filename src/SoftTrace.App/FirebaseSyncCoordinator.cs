@@ -1,4 +1,5 @@
 using SoftTrace.Core;
+using System.Net.NetworkInformation;
 
 namespace SoftTrace.App;
 
@@ -10,7 +11,8 @@ public sealed record CloudSyncStatus(
     DateTimeOffset? LastSyncUtc,
     bool HasError,
     string? DisplayName = null,
-    string? PhotoUrl = null);
+    string? PhotoUrl = null,
+    bool RequiresReauthentication = false);
 
 public sealed class FirebaseSyncCoordinator : IAsyncDisposable
 {
@@ -20,6 +22,8 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
     private readonly FirebaseAuthClient _authClient;
     private readonly FirestoreSyncClient _firestoreClient;
     private readonly SemaphoreSlim _operationLock = new(1, 1);
+    private readonly SemaphoreSlim _wakeSignal = new(0, 1);
+    private readonly CloudSyncRetrySchedule _retrySchedule;
     private readonly CancellationTokenSource _cancellation = new();
 
     private FirebaseSyncSettings _settings;
@@ -31,12 +35,14 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
         ActivityStore store,
         FirebaseSyncSettingsStore settingsStore,
         FirebaseAuthClient authClient,
-        FirestoreSyncClient firestoreClient)
+        FirestoreSyncClient firestoreClient,
+        CloudSyncRetrySchedule? retrySchedule = null)
     {
         _store = store;
         _settingsStore = settingsStore;
         _authClient = authClient;
         _firestoreClient = firestoreClient;
+        _retrySchedule = retrySchedule ?? new CloudSyncRetrySchedule();
         _settings = settingsStore.Load();
         _currentStatus = _settings.IsConfigured
             ? new CloudSyncStatus(
@@ -64,32 +70,35 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
             return;
         }
 
+        NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
         _loopTask = Task.Run(() => RunLoopAsync(_cancellation.Token));
-        if (_settings.IsConfigured)
-        {
-            _ = Task.Run(() => SyncNowAsync(_cancellation.Token));
-        }
     }
 
     public async Task SignInWithGoogleAsync(CancellationToken cancellationToken = default)
     {
         await _operationLock.WaitAsync(cancellationToken);
+        var requiresReauthentication = _currentStatus.RequiresReauthentication;
         try
         {
-            SetStatus(new CloudSyncStatus(false, true, null, "正在打开 Google 登录…", null, false));
-            _session = await _authClient.SignInWithGoogleAsync(
+            SetStatus(new CloudSyncStatus(_settings.IsConfigured, true, _settings.Email, "正在打开 Google 登录…", null, false));
+            var session = await _authClient.SignInWithGoogleAsync(
                 FirebaseConfiguration.ApiKey,
                 FirebaseConfiguration.GoogleDesktopClientId,
                 FirebaseConfiguration.GetGoogleDesktopClientSecret(),
                 cancellationToken);
-            _settings = new FirebaseSyncSettings(
+            if (_settings.IsConfigured && !string.Equals(_settings.UserId, session.UserId, StringComparison.Ordinal))
+                throw new InvalidOperationException($"请选择原 Google 账号（{_settings.Email}）。原账号、记录和设置均已保留。");
+            var settings = new FirebaseSyncSettings(
                 true,
-                _session.Email,
-                _session.DisplayName,
-                _session.PhotoUrl,
-                _session.UserId,
-                FirebaseSyncSettingsStore.ProtectRefreshToken(_session.RefreshToken));
-            _settingsStore.Save(_settings);
+                session.Email,
+                session.DisplayName,
+                session.PhotoUrl,
+                session.UserId,
+                FirebaseSyncSettingsStore.ProtectRefreshToken(session.RefreshToken));
+            _settingsStore.Save(settings);
+            _settings = settings;
+            _session = session;
+            _retrySchedule.RecordSuccess();
             SetStatus(new CloudSyncStatus(
                 true,
                 false,
@@ -98,15 +107,16 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
                 null,
                 false));
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception)
         {
             SetStatus(new CloudSyncStatus(
+                _settings.IsConfigured,
                 false,
-                false,
+                _settings.Email,
+                exception is OperationCanceledException ? "已取消 Google 授权，原账号与本地数据保留。" : exception.Message,
                 null,
-                exception.Message,
-                null,
-                true));
+                true,
+                RequiresReauthentication: requiresReauthentication));
             throw;
         }
         finally
@@ -124,6 +134,7 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
         {
             _session = null;
             _settings = FirebaseSyncSettings.Empty;
+            _retrySchedule.RecordSuccess();
             _settingsStore.Save(_settings);
             SetStatus(new CloudSyncStatus(false, false, null, "尚未登录", null, false));
         }
@@ -133,7 +144,10 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
         }
     }
 
-    public async Task SyncNowAsync(CancellationToken cancellationToken = default)
+    public Task SyncNowAsync(CancellationToken cancellationToken = default) =>
+        SyncCoreAsync(false, cancellationToken);
+
+    private async Task SyncCoreAsync(bool automatic, CancellationToken cancellationToken)
     {
         if (!_settings.IsConfigured)
         {
@@ -143,6 +157,9 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
         await _operationLock.WaitAsync(cancellationToken);
         try
         {
+            // Recheck after waiting: a manual sync or sign-out may have completed first.
+            if (!_settings.IsConfigured || (automatic &&
+                (_currentStatus.RequiresReauthentication || _retrySchedule.Delay > TimeSpan.Zero))) return;
             SetStatus(new CloudSyncStatus(true, true, _settings.Email, "正在同步…", null, false));
             var session = await EnsureSessionAsync(cancellationToken);
             var pushed = await PushPendingAsync(session, cancellationToken);
@@ -153,6 +170,7 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
                 ? "云端已是最新"
                 : $"已同步：上传 {pushed}，更新 {pulled}";
             if (deviceNames > 0) detail += $"；设备名称 {deviceNames}";
+            _retrySchedule.RecordSuccess();
             SetStatus(new CloudSyncStatus(
                 true,
                 false,
@@ -164,8 +182,14 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
+        catch (FirebaseReauthorizationRequiredException exception)
+        {
+            SetStatus(new CloudSyncStatus(true, false, _settings.Email, exception.Message, null, true,
+                RequiresReauthentication: true));
+        }
         catch (Exception exception)
         {
+            _retrySchedule.RecordFailure();
             SetStatus(new CloudSyncStatus(
                 true,
                 false,
@@ -302,17 +326,30 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
 
     private async Task RunLoopAsync(CancellationToken cancellationToken)
     {
-        using var timer = new PeriodicTimer(SyncInterval);
         try
         {
-            while (await timer.WaitForNextTickAsync(cancellationToken))
+            while (!cancellationToken.IsCancellationRequested)
             {
-                await SyncNowAsync(cancellationToken);
+                var delay = _settings.IsConfigured && !_currentStatus.RequiresReauthentication
+                    ? _retrySchedule.Delay : SyncInterval;
+                await _wakeSignal.WaitAsync(delay, cancellationToken);
+                if (_currentStatus.RequiresReauthentication) continue;
+                await SyncCoreAsync(true, cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
+    }
+
+    private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs args)
+    {
+        if (!args.IsAvailable || _cancellation.IsCancellationRequested || !_settings.IsConfigured ||
+            _currentStatus.RequiresReauthentication) return;
+        _retrySchedule.RequestNow();
+        try { _wakeSignal.Release(); }
+        catch (SemaphoreFullException) { }
+        catch (ObjectDisposedException) { }
     }
 
     private void SetStatus(CloudSyncStatus status)
@@ -332,12 +369,14 @@ public sealed class FirebaseSyncCoordinator : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
         _cancellation.Cancel();
         if (_loopTask is not null)
         {
             await _loopTask;
         }
         _operationLock.Dispose();
+        _wakeSignal.Dispose();
         _cancellation.Dispose();
     }
 }

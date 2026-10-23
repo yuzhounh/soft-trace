@@ -163,7 +163,8 @@ public sealed partial class ActivityStore
         string deviceId,
         DateTimeOffset rangeStartUtc,
         DateTimeOffset rangeEndUtc,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string kind = "application")
     {
         var ranges = new List<TimeRange>();
         await using var command = connection.CreateCommand();
@@ -172,11 +173,13 @@ public sealed partial class ActivityStore
             SELECT start_utc, end_utc
             FROM activities
             WHERE device_id = $device_id
+              AND kind = $kind
               AND start_utc < $range_end
               AND end_utc > $range_start
             ORDER BY start_utc, end_utc;
             """;
         command.Parameters.AddWithValue("$device_id", deviceId);
+        command.Parameters.AddWithValue("$kind", kind);
         command.Parameters.AddWithValue("$range_start", ToDatabaseTime(rangeStartUtc));
         command.Parameters.AddWithValue("$range_end", ToDatabaseTime(rangeEndUtc));
 

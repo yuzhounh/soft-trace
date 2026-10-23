@@ -15,6 +15,5 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <ProjectReference Include="../../src/SoftTrace.App/SoftTrace.App.csproj" />
-    <EmbeddedResource Include="../../src/SoftTrace.App/App.xaml" LogicalName="AppResources.xaml" />
   </ItemGroup>
 </Project>

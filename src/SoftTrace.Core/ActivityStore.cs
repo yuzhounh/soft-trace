@@ -78,6 +78,8 @@ public sealed partial class ActivityStore(string databasePath)
         await EnsureColumnAsync(connection, "activities", "updated_utc", "TEXT NOT NULL DEFAULT ''", cancellationToken);
         await EnsureColumnAsync(connection, "activities", "synced_utc", "TEXT NULL", cancellationToken);
         await EnsureColumnAsync(connection, "activities", "source", "TEXT NOT NULL DEFAULT 'local'", cancellationToken);
+        await EnsureColumnAsync(connection, "activities", "window_title", "TEXT NULL", cancellationToken);
+        await EnsureColumnAsync(connection, "activities", "kind", "TEXT NOT NULL DEFAULT 'application'", cancellationToken);
 
         command.CommandText = """
             UPDATE activities
@@ -145,11 +147,11 @@ public sealed partial class ActivityStore(string databasePath)
                 INSERT INTO activities (
                     sync_id, device_id, device_name, start_utc, end_utc,
                     process_name, app_name, executable_path, is_open,
-                    created_utc, updated_utc, synced_utc, source
+                    created_utc, updated_utc, synced_utc, source, window_title, kind
                 ) VALUES (
                     $sync_id, $device_id, $device_name, $start_utc, $end_utc,
                     $process_name, $app_name, $executable_path, 1,
-                    $created_utc, $updated_utc, NULL, 'local'
+                    $created_utc, $updated_utc, NULL, 'local', $window_title, $kind
                 );
                 SELECT last_insert_rowid();
                 """;
@@ -161,6 +163,8 @@ public sealed partial class ActivityStore(string databasePath)
             command.Parameters.AddWithValue("$process_name", app.ProcessName);
             command.Parameters.AddWithValue("$app_name", app.AppName);
             command.Parameters.AddWithValue("$executable_path", (object?)app.ExecutablePath ?? DBNull.Value);
+            command.Parameters.AddWithValue("$window_title", (object?)app.WindowTitle ?? DBNull.Value);
+            command.Parameters.AddWithValue("$kind", app.Kind);
             command.Parameters.AddWithValue("$created_utc", ToDatabaseTime(writtenUtc));
             command.Parameters.AddWithValue("$updated_utc", ToDatabaseTime(writtenUtc));
             id = Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
@@ -178,7 +182,8 @@ public sealed partial class ActivityStore(string databasePath)
             await using var command = connection.CreateCommand();
             command.CommandText = """
                 UPDATE activities
-                SET end_utc = CASE WHEN $end_utc > end_utc THEN $end_utc ELSE end_utc END,
+                SET end_utc = CASE WHEN $is_open = 0 THEN MAX(start_utc, $end_utc)
+                                  WHEN $end_utc > end_utc THEN $end_utc ELSE end_utc END,
                     is_open = $is_open,
                     updated_utc = $updated_utc
                 WHERE id = $id;
@@ -228,6 +233,7 @@ public sealed partial class ActivityStore(string databasePath)
             FROM activities
             WHERE start_utc < $range_end
               AND end_utc > $range_start
+              AND kind = 'application'
               AND ($device_id IS NULL OR device_id = $device_id)
             GROUP BY app_name, process_name
             HAVING seconds > 0
@@ -372,7 +378,7 @@ public sealed partial class ActivityStore(string databasePath)
         await using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT sync_id, device_id, device_name, process_name, app_name,
-                   executable_path, start_utc, end_utc, updated_utc, is_open, source
+                   executable_path, start_utc, end_utc, updated_utc, is_open, source, window_title, kind
             FROM activities
             WHERE synced_utc IS NULL OR updated_utc > synced_utc
             ORDER BY updated_utc, sync_id
@@ -395,7 +401,9 @@ public sealed partial class ActivityStore(string databasePath)
                 FromDatabaseTime(reader.GetString(7)),
                 FromDatabaseTime(reader.GetString(8)),
                 reader.GetInt32(9) != 0,
-                reader.GetString(10)));
+                reader.GetString(10),
+                WindowTitle: reader.IsDBNull(11) ? null : reader.GetString(11),
+                Kind: reader.GetString(12)));
         }
         return activities;
     }
@@ -438,11 +446,11 @@ public sealed partial class ActivityStore(string databasePath)
                     INSERT INTO activities (
                         sync_id, device_id, device_name, start_utc, end_utc,
                         process_name, app_name, executable_path, is_open,
-                        created_utc, updated_utc, synced_utc, source
+                        created_utc, updated_utc, synced_utc, source, window_title, kind
                     ) VALUES (
                         $sync_id, $device_id, $device_name, $start_utc, $end_utc,
                         $process_name, $app_name, $executable_path, $is_open,
-                        $created_utc, $updated_utc, $updated_utc, $source
+                        $created_utc, $updated_utc, $updated_utc, $source, $window_title, $kind
                     )
                     ON CONFLICT(sync_id) DO UPDATE SET
                         device_id = excluded.device_id,
@@ -455,7 +463,9 @@ public sealed partial class ActivityStore(string databasePath)
                         is_open = excluded.is_open,
                         updated_utc = excluded.updated_utc,
                         synced_utc = excluded.updated_utc,
-                        source = excluded.source
+                        source = excluded.source,
+                        window_title = excluded.window_title,
+                        kind = excluded.kind
                     WHERE excluded.updated_utc > activities.updated_utc;
                     """;
                 command.Parameters.AddWithValue("$sync_id", activity.SyncId);
@@ -470,6 +480,8 @@ public sealed partial class ActivityStore(string databasePath)
                 command.Parameters.AddWithValue("$created_utc", ToDatabaseTime(activity.UpdatedUtc));
                 command.Parameters.AddWithValue("$updated_utc", ToDatabaseTime(activity.UpdatedUtc));
                 command.Parameters.AddWithValue("$source", activity.Source);
+                command.Parameters.AddWithValue("$window_title", (object?)activity.WindowTitle ?? DBNull.Value);
+                command.Parameters.AddWithValue("$kind", activity.Kind);
                 changed += await command.ExecuteNonQueryAsync(cancellationToken);
             }
             await transaction.CommitAsync(cancellationToken);

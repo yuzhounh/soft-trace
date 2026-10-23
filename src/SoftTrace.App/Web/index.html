@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>SoftTrace · 每日记录</title>
+  <link rel="stylesheet" href="/dashboard.css">
+  <link rel="icon" href="/brand.ico" type="image/x-icon">
+  <script src="/table-sort.js" defer></script>
+  <script src="/dashboard.js" defer></script>
+  <script src="/patterns.js" defer></script>
+  <script src="/overview.js" defer></script>
+  <script src="/calendar.js" defer></script>
+  <script src="/management.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="SoftTrace 首页"><img class="brand-logo" src="/brand.ico" alt="">SoftTrace</a>
+    <div class="actions"><button id="manage" class="icon-button" title="设置" aria-label="设置"><svg class="arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M8 2h4l.5 2a7 7 0 0 1 1 .6l2-.6 2 3.5L16 9a7 7 0 0 1 0 2l1.5 1.5-2 3.5-2-.6a7 7 0 0 1-1 .6l-.5 2H8l-.5-2a7 7 0 0 1-1-.6l-2 .6-2-3.5L4 11a7 7 0 0 1 0-2L2.5 7.5 4.5 4l2 .6a7 7 0 0 1 1-.6Z"/><circle cx="10" cy="10" r="2.5"/></svg></button></div>
+  </header>
+  <main>
+    <section class="heading"><div><div class="eyebrow">你的时间，有迹可循</div><h1 id="page-title">每日记录</h1><p id="page-description">回到某个时刻，看看当时在做什么。</p></div><div class="date-controls"><label class="sr-only" for="view-mode">时间视图</label><select id="view-mode"><option value="day">日视图</option><option value="yesterday">昨天</option><option value="week">周视图</option><option value="month">月视图</option><option value="quarter">季度视图</option><option value="year">年视图</option><option value="7days">近 7 天</option><option value="30days">近 30 天</option><option value="3months">近一季度</option><option value="12months">近一年</option><option value="all">全部时间</option><option value="custom">自定义范围</option></select><button id="previous" class="icon-button" aria-label="上一周期"><svg class="arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6"/></svg></button><input id="date" type="hidden"><button id="date-picker" data-date-for="date" aria-label="选择记录日期" aria-haspopup="dialog"><span data-date-label="date"></span><svg class="arrow" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M6 2v4m8-4v4M3 8h14"/></svg></button><span id="custom-range" class="custom-range" hidden><input id="range-from" type="hidden"><button data-date-for="range-from" aria-label="选择范围开始日期" aria-haspopup="dialog"><span data-date-label="range-from"></span></button><span class="range-separator">至</span><input id="range-to" type="hidden"><button data-date-for="range-to" aria-label="选择范围结束日期" aria-haspopup="dialog"><span data-date-label="range-to"></span></button></span><button id="next" class="icon-button" aria-label="下一周期"><svg class="arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6"/></svg></button><button id="today">今天</button><label class="sr-only" for="device">设备</label><select id="device"></select></div></section>
+    <div id="error" class="notice error" role="alert" hidden></div>
+    <section class="summary day-view-only" aria-label="当天概况">
+      <article><span>实际使用</span><strong id="active">—</strong><small>前台软件活动累计</small></article>
+      <article><span>空闲时间</span><strong id="idle">—</strong><small id="idle-rule">根据无输入时长识别</small></article>
+      <article><span>首次活动</span><strong id="first">—</strong><small>当天最早的软件使用记录</small></article>
+      <article><span>最后活动</span><strong id="last">—</strong><small>截至最后保存的记录</small></article>
+    </section>
+    <section id="period-content" hidden aria-label="周期概览">
+      <div class="overview-charts">
+        <div class="summary"><article><span>实际使用</span><strong id="period-active">—</strong><small id="period-range">所选时间范围</small></article><article><span>日均使用</span><strong id="period-average">—</strong><small>按有活动记录的日期计算</small></article><article><span>活跃天数</span><strong id="period-days">—</strong><small>有软件使用记录的日期</small></article><article><span>使用软件</span><strong id="period-app-count">—</strong><small>所选设备的软件数量</small></article></div>
+        <section class="panel"><div class="panel-heading"><div><h2 id="trend-heading">使用趋势</h2><p id="trend-description">点击日期查看每日记录。</p></div></div><div id="period-chart" class="period-chart"></div></section>
+
+      </div>
+
+    </section>
+    <section id="usage-patterns" class="panel usage-patterns" aria-label="多日使用规律" hidden>
+      <div class="panel-heading"><div><h2>使用规律</h2><p id="patterns-coverage"></p></div></div>
+      <div class="pattern-tabs" role="tablist" aria-label="使用规律分析">
+        <button type="button" id="pattern-tab-hourly" data-pattern-tab="hourly" role="tab" aria-controls="pattern-content" aria-selected="true">24 小时</button>
+        <button type="button" id="pattern-tab-weekday" data-pattern-tab="weekday" role="tab" aria-controls="pattern-content" aria-selected="false" tabindex="-1" hidden>星期</button>
+        <button type="button" id="pattern-tab-academic" data-pattern-tab="academic" role="tab" aria-controls="pattern-content" aria-selected="false" tabindex="-1" hidden>学期与寒暑假</button>
+      </div>
+      <p id="pattern-description" class="pattern-description"></p>
+      <div id="pattern-content" role="tabpanel" aria-labelledby="pattern-tab-hourly"></div>
+    </section>
+    <section class="panel timeline-panel day-view-only">
+      <div class="panel-heading"><div><h2>活动时间轴</h2><p id="day-label">按本机时区显示，点击片段查看明细。</p></div><div class="actions"><label>显示范围 <select id="zoom"><option value="day">全天</option><option value="activity">活动时段</option><option id="zoom-range" value="range" hidden disabled>选中时段</option></select></label><button id="timeline-reset" disabled>恢复全天</button><label><span class="sr-only">定位时间</span><input id="jump-time" type="time" step="1"></label><button id="jump">定位时间</button><button id="refresh">刷新</button></div></div>
+      <p id="timeline-range" class="timeline-range" role="status" hidden></p><div class="timeline-scroll"><div class="timeline-content"><div class="axis-row"><span></span><div id="axis"></div></div><div class="track-row"><span>状态</span><div id="state-track" class="track" aria-label="状态时间轴"></div></div><div class="track-row"><span>软件</span><div id="app-track" class="track" aria-label="软件时间轴"></div></div></div></div>
+      <div class="legend"><span><i class="active"></i>使用中</span><span><i class="idle"></i>空闲</span><span><i class="locked"></i>锁屏</span><span><i class="sleep"></i>睡眠</span><span><i class="paused"></i>暂停</span><span><i class="fault"></i>故障 / 无法采集</span><span><i class="unknown"></i>未记录</span></div>
+      <p class="hint">空闲表示超过阈值没有键鼠输入；未记录不代表离开或关机。历史记录没有窗口标题和状态时，保留原始信息。</p>
+      <div id="selection" class="selection" role="status">选择任意时间片段，可在下方定位它的记录。</div>
+    </section>
+      <section class="panel details day-view-only">
+        <div class="panel-heading"><div><h2>逐段明细 <span id="count" class="count"></span></h2><p>软件切换与窗口标题变化分别记录。</p></div><button id="clear">清除筛选</button></div>
+        <div class="filters"><label class="search-label"><span class="sr-only">搜索软件、进程或窗口标题</span><input id="search" type="search" placeholder="搜索软件、进程或窗口标题…"></label><label><span class="sr-only">记录类型</span><select id="kind"><option value="all">全部记录</option><option value="application">软件使用</option><option value="states">状态变化</option></select></label></div>
+        <div class="table-wrap"><table><thead><tr><th>开始</th><th>结束</th><th>持续时间</th><th>软件 / 状态</th><th>进程</th><th>窗口标题</th></tr></thead><tbody id="rows"></tbody></table></div>
+      </section>
+    <section id="software-panel" class="panel overview-software" aria-label="软件用时">
+      <div class="panel-heading"><div><h2>软件用时</h2><p id="software-caption">当前范围的软件使用分布与明细。</p></div><div class="actions"><span id="software-total" class="count"></span><div class="theme-options" role="group" aria-label="软件图表布局"><button type="button" data-software-layout="donut" aria-pressed="true">环形图</button><button type="button" data-software-layout="stacked" aria-pressed="false">占比条</button></div></div></div>
+      <div class="software-body"><div class="software-distribution"><div id="software-stack" class="software-stack" role="group" aria-label="软件用时占比条" hidden></div><p id="stack-summary" class="stack-summary" role="status" hidden></p><div id="period-donut" class="period-donut"><svg viewBox="0 0 200 200" aria-label="软件使用分布"></svg><div><strong id="donut-total">—</strong><span id="donut-label">总计</span></div></div></div><div class="software-data"><div class="table-wrap"><table><thead><tr><th>软件</th><th>进程</th><th>使用时长</th><th>占比</th></tr></thead><tbody id="period-apps"></tbody></table></div><div class="pagination"><label>每页 <select id="software-page-size" aria-label="每页软件数量"><option selected>20</option><option>50</option><option>100</option><option>200</option><option value="all">全部</option></select></label><span id="software-page-label"></span><div class="actions"><button id="software-prev">上一页</button><button id="software-next">下一页</button></div></div></div></div>
+    </section>
+    <footer class="page-footer" aria-label="页面底部"><button id="back-top"><svg class="arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="m4 12 6-6 6 6M10 6v11"/></svg>回到顶部</button></footer>
+  </main>
+  <div id="timeline-tooltip" role="tooltip" hidden></div>
+  <div id="calendar" popover="auto" role="dialog" aria-label="选择日期">
+    <div class="calendar-heading"><button id="month-previous" class="icon-button" aria-label="上个月"><svg class="arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6"/></svg></button><span id="calendar-month" aria-live="polite"></span><button id="month-next" class="icon-button" aria-label="下个月"><svg class="arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6"/></svg></button></div>
+    <div class="calendar-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div id="calendar-days" class="calendar-grid"></div><button id="calendar-today">今天</button>
+  </div>
+  <dialog id="settings-dialog" class="management-dialog">
+    <div class="dialog-heading"><h2>设置</h2><button data-close-dialog="settings-dialog" aria-label="关闭设置">✕</button></div>
+    <div class="settings-layout">
+      <nav class="dialog-tabs" aria-label="设置分类">
+        <button data-settings-tab="preferences" aria-selected="true">常规</button>
+        <button data-settings-tab="account" aria-selected="false">账号与同步</button>
+        <button data-settings-tab="devices" aria-selected="false">设备管理</button>
+        <button data-settings-tab="data" aria-selected="false">数据管理</button>
+      </nav>
+      <div class="settings-content">
+        <section data-settings-panel="preferences">
+          <div class="settings-section-heading"><h3>常规</h3><p>当前电脑的采集行为与界面外观。</p></div>
+          <div class="settings-group">
+            <div class="setting-row"><div><h4>采集状态</h4><p id="recording" role="status">正在连接采集程序…</p></div><button id="pause">暂停记录</button></div>
+          </div>
+          <div class="settings-group">
+            <div class="setting-row"><div><label for="idle-minutes">空闲阈值</label><p>连续无键鼠输入超过此时间后，不计入软件用时。</p></div><div class="inline-field"><input id="idle-minutes" type="number" min="1" max="60" step="1"><span>分钟</span></div></div>
+            <div class="setting-row"><div><label for="auto-start">开机自启动</label><p>登录 Windows 后在后台开始记录。</p></div><input id="auto-start" type="checkbox"></div>
+          </div>
+          <div class="settings-group"><div class="setting-row"><div><h4>颜色模式</h4><p>更改页面的浅色或深色外观。</p></div><div class="theme-options" role="group" aria-label="颜色模式"><button type="button" data-theme="light" aria-pressed="false">浅色</button><button type="button" data-theme="dark" aria-pressed="false">深色</button></div></div></div>
+        </section>
+        <section data-settings-panel="account" hidden>
+          <div class="settings-section-heading"><h3>账号与同步</h3><p>使用 Google 账号同步不同电脑的记录。</p></div>
+          <div class="settings-group account-settings-group"><div class="account-card"><span class="account-avatar"><img id="account-avatar" alt="账户头像" width="40" height="40" hidden><svg id="account-avatar-fallback" class="arrow" viewBox="0 0 20 20" aria-label="用户"><circle cx="10" cy="6" r="3"/><path d="M4 17v-1a6 6 0 0 1 12 0v1"/></svg></span><div><h3 id="account-name">本地记录</h3><p id="account-email"></p></div></div><div class="settings-group-actions"><button id="account-login">Google 登录</button><button id="account-logout">退出账号</button></div></div>
+          <div class="settings-group"><div class="settings-group-heading"><h4>同步状态</h4><button id="account-sync-now">立即同步</button></div><p id="account-sync"></p><div class="sync-metadata"><p id="account-last-sync"></p><p id="account-updated"></p></div></div>
+          <p class="settings-note">退出账号会保留本地记录；重新登录后可继续同步。</p>
+        </section>
+        <section data-settings-panel="devices" hidden>
+          <div class="settings-section-heading"><h3>设备管理</h3><p>为每台电脑设置容易辨认的显示名称。</p></div>
+          <div id="settings-devices"></div>
+          <p class="settings-note">仅修改显示名称，设备身份、Windows 计算机名和历史记录归属保持不变。</p>
+        </section>
+        <section data-settings-panel="data" hidden>
+          <div class="settings-section-heading"><h3>数据管理</h3><p>导出记录留存，或导入已有的活动数据。</p></div>
+          <div class="settings-group"><h4>导出记录</h4><p class="settings-description">选择需要导出的日期和设备，保存为 SoftTrace JSON 文件。</p><div class="settings-fields export-fields"><label>日期范围<select id="export-scope"><option value="all">全部日期</option><option value="day">当前查看日期</option><option value="view">当前视图范围</option></select></label><label>设备<select id="export-device"></select></label><button id="export-data">下载 JSON</button></div></div>
+          <div class="settings-group"><h4>导入记录</h4><p class="settings-description">支持 SoftTrace JSON、ManicTime ZIP 或 ManicTimeReports.db，单个文件不超过 256 MB。</p><div class="import-field"><span>选择数据文件</span><div class="import-controls"><div class="file-picker"><input id="import-file" type="file" accept=".json,.zip,.db" hidden><button id="choose-import-file" type="button">选择文件</button><span id="import-file-name" role="status">未选择文件</span></div><button id="import-data">导入文件</button></div></div><p class="settings-note">已有记录优先，重叠时段不会重复累计。</p></div>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+</body>
+</html>
