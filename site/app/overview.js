@@ -4,7 +4,7 @@
   const titles={day:'每日记录',yesterday:'昨日记录',week:'每周概览',month:'每月概览',quarter:'季度概览',year:'年度概览','7days':'近 7 天','30days':'近 30 天','3months':'近一季度','12months':'近一年',all:'全部时间',custom:'自定义范围'};
   const currentLabels={day:'今天',yesterday:'今天',week:'本周',month:'本月',quarter:'本季度',year:'今年','7days':'截至今天','30days':'截至今天','3months':'截至今天','12months':'截至今天',all:'全部时间'};
   const isDay=()=>['day','yesterday'].includes($('view-mode').value);
-  let buckets=[],distribution=[],distributionTotal=0,trendMode='day';
+  let buckets=[],distribution=[],distributionTotal=0,trendMode='day',renderedVersion='';
   let softwareApps=[],softwarePage=0,softwareContext='';
   const softwareSort=window.softTraceTableSort.bind(document.querySelector('#software-panel table'),
     ['app','process','seconds','share'],()=>{softwarePage=0;renderSoftwareRows();},'使用时长逆序');
@@ -151,17 +151,21 @@
     if(selected.mode!=='all'){query.set('start',selected.start.toISOString());query.set('end',selected.end.toISOString());}else query.set('all','1');
     const data=await api(`/api/overview?${query}`);
     if(revision!==client.revision())return;
+    $('account-updated').textContent=`数据更新于 ${new Date(status.nowUtc).toLocaleTimeString('zh-CN',{hour12:false})}`;
+    $('next').disabled=selected.mode==='all'||selected.end>new Date();
+    $('error').hidden=true;
+    const version=data.dataVersion&&JSON.stringify([data.dataVersion,selected.mode,query.toString(),revision]);
+    if(version&&version===renderedVersion)return;
     $('period-active').textContent=duration(data.activeSeconds);
     $('period-average').textContent=duration(data.activeDays?data.activeSeconds/data.activeDays:0);
     $('period-days').textContent=`${data.activeDays} 天`;
     $('period-app-count').textContent=`${data.apps.length} 个`;
     const quarter=selected.mode==='quarter'?`${selected.start.getFullYear()} 年第 ${Math.floor(selected.start.getMonth()/3)+1} 季度 · `:'';
     $('period-range').textContent=data.days.length?`${quarter}${data.days[0].date} — ${data.days.at(-1).date}`:'暂无记录';
-    $('account-updated').textContent=`数据更新于 ${new Date(status.nowUtc).toLocaleTimeString('zh-CN',{hour12:false})}`;
-    $('next').disabled=selected.mode==='all'||selected.end>new Date();
     document.dispatchEvent(new Event('softtrace-dates'));
     renderTrend(data,selected.mode);renderSoftware(data);
     window.softTracePatterns?.render(data.patterns,selected.mode,data.days.length);
+    renderedVersion=version;
     $('error').hidden=true;
   }
   $('period-chart').onclick=event=>{
