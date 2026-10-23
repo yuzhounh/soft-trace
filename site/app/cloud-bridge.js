@@ -1,8 +1,19 @@
 'use strict';
 (() => {
   const model=import('./model.mjs');
-  let owner='',generation=0,registry=[],registryAt=0,dataAt=0;
+  let owner='',generation=0,registry=[],registryAt=0,dataAt=0,version=0;
   const cache=new Map();
+  const MAX_RANGES=12,MAX_ROWS=50000;
+  function touch(key,entry){cache.delete(key);cache.set(key,entry);}
+  function trimCache(){
+    let rows=[...cache.values()].reduce((sum,entry)=>sum+(entry.rowCount||0),0);
+    for(const [key,entry] of cache){
+      if(cache.size<=MAX_RANGES&&rows<=MAX_ROWS)break;
+      // Pending reads remain shareable until they settle; only retained snapshots are evicted.
+      if(entry.pending)continue;
+      cache.delete(key);rows-=entry.rowCount||0;
+    }
+  }
   const me=()=>CloudAuth.requireUser();
   function invalidate(){for(const entry of cache.values())entry.force=true;registryAt=0;}
   CloudAuth.onUser(user=>{if(owner!==(user?.uid||'')){owner=user?.uid||'';generation++;registry=[];cache.clear();dataAt=0;registryAt=0;}if(user)window.softTrace?.refresh(true);});
@@ -36,9 +47,9 @@
   }
   async function records(start,end,device,rangeEnd) {
     const uid=me().uid,epoch=generation,key=JSON.stringify([uid,start,rangeEnd]),hit=cache.get(key);
-    const select=rows=>rows.filter(e=>!device||e.deviceId===device);
+    const select=(rows,entry)=>({rows:rows.filter(e=>!device||e.deviceId===device),entry});
     const fresh=entry=>!entry.force&&((entry.end>=entry.rangeEnd&&entry.rangeEnd<=Date.now())||Date.now()-entry.at<120000);
-    if(hit&&fresh(hit)){const rows=await hit.promise;checkOwner(uid,epoch);return select(rows);}
+    if(hit&&fresh(hit)){touch(key,hit);const rows=await hit.promise;checkOwner(uid,epoch);return select(rows,hit);}
     const from=start?+new Date(start):-Infinity,to=+new Date(end);
     const reusable=[...cache.values()].filter(entry=>fresh(entry)&&entry.start<to&&entry.end>from).sort((a,b)=>a.start-b.start);
     const promise=(async()=>{const m=await model;
@@ -51,8 +62,8 @@
         for(const doc of new Map(pages.flat().map(d=>[d.name,d])).values()){const entry=m.normalizeActivity(doc,CloudAuth.documentData);if(entry)merged.set(entry.id,entry);}
       }
       checkOwner(uid,epoch);return[...merged.values()].filter(e=>+new Date(e.endUtc)>from&&+new Date(e.startUtc)<to);
-    })();cache.set(key,{at:Date.now(),start:from,end:to,rangeEnd:+new Date(rangeEnd),promise});
-    try{const rows=await promise;checkOwner(uid,epoch);dataAt=Date.now();return select(rows);}catch(error){if(generation===epoch){if(hit)cache.set(key,hit);else cache.delete(key);}throw error;}
+    })();const entry={at:Date.now(),start:from,end:to,rangeEnd:+new Date(rangeEnd),promise,pending:true,version:++version};touch(key,entry);trimCache();
+    try{const rows=await promise;checkOwner(uid,epoch);entry.pending=false;entry.rowCount=rows.length;trimCache();dataAt=Date.now();return select(rows,entry);}catch(error){if(generation===epoch&&cache.get(key)===entry){if(hit)touch(key,hit);else cache.delete(key);trimCache();}throw error;}
   }
   async function request(path,{method='GET'}={}) {
     await CloudAuth.ready;
@@ -65,7 +76,13 @@
         const start=all?null:url.searchParams.get('start')||today.toISOString(),rangeEnd=url.searchParams.get('end')||tomorrow.toISOString();
         const end=new Date(Math.min(Date.now(),+new Date(rangeEnd))).toISOString(),device=url.searchParams.get('device');
         if(start&&(!Number.isFinite(+new Date(start))||+new Date(start)>=+new Date(end)))throw Error('请选择有效的日期范围。');
-        const rows=await records(start,end,device,rangeEnd);value=url.pathname==='/api/day'?m.timeline(rows,start,end):m.overview(rows,start,end);
+        const {rows,entry}=await records(start,end,device,rangeEnd);
+        if(url.pathname==='/api/day')value=m.timeline(rows,start,end);
+        else{
+          const key=JSON.stringify([device,new Date(end).toDateString()]);
+          if(entry.overviewKey!==key){entry.overview=m.overview(rows,start,new Date(entry.end).toISOString());entry.overviewKey=key;}
+          value={...entry.overview,dataVersion:`${generation}:${entry.version}:${device||''}`};
+        }
       }else if(url.pathname==='/api/account/avatar')value={dataUrl:user.photoURL||''};
       else if(url.pathname==='/api/sync'){invalidate();value={message:'云端记录已刷新',hasError:false};}
       else if(url.pathname==='/api/account/logout'){await CloudAuth.logout();value={message:'已退出'};}
