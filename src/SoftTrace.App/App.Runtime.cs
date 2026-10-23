@@ -1,9 +1,9 @@
 using System.Drawing;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Interop;
 using SoftTrace.Core;
 using Forms = System.Windows.Forms;
 
@@ -19,9 +19,8 @@ public partial class App
     private ActivityCaptureService? _capture;
     private FirebaseSyncCoordinator? _syncCoordinator;
     private HttpClient? _httpClient;
-    private MainWindow? _mainWindow;
+    private LocalDashboardServer? _dashboard;
     private string? _logPath;
-    private bool _showMainWindowInProgress;
     private bool _trayMenuOpening;
 
     public bool IsExiting { get; private set; }
@@ -74,8 +73,7 @@ public partial class App
             await store.RecoverInterruptedSegmentsAsync(device.Id);
             Log("Database initialized.");
 
-            const int idleMinutes = 3;
-            await store.SetIdleThresholdMinutesAsync(idleMinutes);
+            var idleMinutes = await store.GetIdleThresholdMinutesAsync();
             _capture = new ActivityCaptureService(store, device.Id, device.Name, idleMinutes);
             _capture.CaptureFailed += (_, exception) => Log($"Capture failed: {exception}");
             _capture.StatusChanged += (_, status) =>
@@ -95,8 +93,13 @@ public partial class App
                 Log($"Cloud sync: {status.Message}");
             _syncCoordinator.Start();
 
-            _mainWindow = new MainWindow(store, _capture, _syncCoordinator);
-            MainWindow = _mainWindow;
+            _dashboard = new LocalDashboardServer(store, _capture,
+                () => _syncCoordinator.CurrentStatus, () => _syncCoordinator.SyncNowAsync(),
+                exception => Log($"Local dashboard: {exception}"),
+                new DashboardActions(() => _syncCoordinator.SignInWithGoogleAsync(),
+                    () => _syncCoordinator.SignOutAsync(), () => _syncCoordinator.CurrentUserId,
+                    () => _startupService.IsEnabled(), enabled => _startupService.SetEnabled(enabled)));
+            await _dashboard.StartAsync();
             CreateTrayIcon();
             if (startInBackground)
             {
@@ -104,13 +107,7 @@ public partial class App
             }
             else
             {
-                _mainWindow.Show();
-                _mainWindow.WindowState = WindowState.Normal;
-                _mainWindow.Activate();
-                _mainWindow.Topmost = true;
-                _mainWindow.Topmost = false;
-                _mainWindow.Focus();
-                Log("Main window shown.");
+                ShowMainWindow();
             }
         }
         catch (Exception exception)
@@ -125,97 +122,56 @@ public partial class App
         }
     }
 
-    [DllImport("user32.dll")]
-    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    public void ShowMainWindow() => OpenDashboard();
 
-    public void ShowMainWindow()
+    private void OpenDashboard(string fragment = "")
     {
-        if (!Dispatcher.CheckAccess())
-        {
-            Dispatcher.BeginInvoke(ShowMainWindow);
-            return;
-        }
-        if (IsExiting || _mainWindow is null || _showMainWindowInProgress)
-        {
-            return;
-        }
-
-        _showMainWindowInProgress = true;
+        if (IsExiting || _dashboard is null) return;
         try
         {
-            if (_trayContextMenu is not null)
-            {
-                _trayContextMenu.IsOpen = false;
-            }
-            Log($"Showing main window. Visible={_mainWindow.IsVisible}; State={_mainWindow.WindowState}");
-            ShowMainWindowCore();
+            Process.Start(new ProcessStartInfo(_dashboard.BrowserUrl + fragment) { UseShellExecute = true });
         }
-        finally
-        {
-            _showMainWindowInProgress = false;
-        }
-    }
-
-    private void ShowMainWindowCore()
-    {
-        if (_mainWindow is null)
-        {
-            return;
-        }
-        if (!_mainWindow.IsVisible)
-        {
-            _mainWindow.Show();
-        }
-        if (_mainWindow.WindowState == WindowState.Minimized)
-        {
-            _mainWindow.WindowState = WindowState.Normal;
-        }
-        _mainWindow.Activate();
-        _mainWindow.Topmost = true;
-        _mainWindow.Topmost = false;
-        _mainWindow.Focus();
-        _mainWindow.NotifyShown();
-
-        try
-        {
-            var hwnd = new WindowInteropHelper(_mainWindow).Handle;
-            if (hwnd != IntPtr.Zero)
-            {
-                ShowWindow(hwnd, 9); // SW_RESTORE
-                SetForegroundWindow(hwnd);
-            }
-        }
-        catch
-        {
-        }
+        catch (Exception exception) { Log($"Opening dashboard failed: {exception}"); }
     }
 
     public void RequestExit()
     {
+        if (IsExiting) return;
         IsExiting = true;
-        _mainWindow?.Close();
+        if (_trayContextMenu is not null) _trayContextMenu.IsOpen = false;
         Shutdown();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        IsExiting = true;
         Log("Stopping SoftTrace.");
         _registeredWaitHandle?.Unregister(null);
         _showWindowHandle?.Dispose();
         _trayIcon?.Dispose();
         _trayIconImage?.Dispose();
-        if (_syncCoordinator is not null)
+        // Do not capture the dispatcher while it is shutting down. Complete each cleanup
+        // independently so a failed service cannot skip the final local-record checkpoint.
+        Task.Run(async () =>
         {
-            _syncCoordinator.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        }
-        if (_capture is not null)
-        {
-            _capture.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        }
+            async Task StopService(string name, Func<ValueTask> stop)
+            {
+                try { await stop().ConfigureAwait(false); }
+                catch (Exception exception) { Log($"Shutdown cleanup failed ({name}): {exception}"); }
+            }
+            if (_dashboard is not null) await StopService("dashboard", _dashboard.DisposeAsync);
+            if (_syncCoordinator is not null) await StopService("sync", _syncCoordinator.DisposeAsync);
+            if (_capture is not null) await StopService("capture", _capture.DisposeAsync);
+        }).GetAwaiter().GetResult();
         _httpClient?.Dispose();
         _singleInstanceMutex?.Dispose();
         Log("SoftTrace stopped.");
         base.OnExit(e);
+        // WPF Shutdown ends the application dispatcher; it does not guarantee process
+        // termination if a native/COM component still owns a foreground thread. The user
+        // explicitly exited and all services have been stopped and records flushed above.
+        // End this process normally rather than leaving the single-instance owner alive.
+        Environment.Exit(e.ApplicationExitCode);
     }
 
     private readonly StartupService _startupService = new();
@@ -393,7 +349,7 @@ public partial class App
 
     private void OpenTrayMenu()
     {
-        if (_trayContextMenu is null || _trayContextMenu.IsOpen || _trayMenuOpening || _showMainWindowInProgress)
+        if (_trayContextMenu is null || _trayContextMenu.IsOpen || _trayMenuOpening)
         {
             return;
         }
@@ -451,6 +407,9 @@ public partial class App
     {
         try
         {
+            // The current database and its settings are authoritative. Never replace them with
+            // a larger but older MSIX cache, or copy legacy WAL/configuration files over them.
+            if (File.Exists(Path.Combine(targetDirectory, "softtrace.db"))) return;
             var legacyDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "Packages",
@@ -467,9 +426,9 @@ public partial class App
             {
                 var fileName = Path.GetFileName(filePath);
                 var destPath = Path.Combine(targetDirectory, fileName);
-                if (!File.Exists(destPath) || new FileInfo(destPath).Length < new FileInfo(filePath).Length)
+                if (!File.Exists(destPath))
                 {
-                    File.Copy(filePath, destPath, overwrite: true);
+                    File.Copy(filePath, destPath, overwrite: false);
                 }
             }
         }

@@ -4,7 +4,7 @@ $projectRoot = $PSScriptRoot
 $dotnetCommand = (Get-Command dotnet -ErrorAction Stop).Source
 $solution = Join-Path $projectRoot 'SoftTrace.sln'
 $appProject = Join-Path $projectRoot 'src\SoftTrace.App\SoftTrace.App.csproj'
-$version = '0.3.4'
+$version = '0.8.4'
 $runtime = 'win-x64'
 $distDirectory = Join-Path $projectRoot 'dist'
 $publishDirectory = Join-Path $distDirectory "SoftTrace-v$version-$runtime"
@@ -51,8 +51,13 @@ if ($LASTEXITCODE -ne 0) { throw "dotnet test failed with exit code $LASTEXITCOD
     -p:DebugType=None `
     -p:DebugSymbols=false
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
+foreach ($webFile in @('index.html', 'dashboard.css', 'dashboard.js', 'overview.js', 'patterns.js', 'management.js', 'calendar.js', 'brand.ico')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $publishDirectory "Web\$webFile"))) {
+        throw "Published web asset is missing: $webFile"
+    }
+}
 
-Compress-Archive -LiteralPath (Join-Path $publishDirectory 'SoftTrace.exe') `
+Compress-Archive -Path (Join-Path $publishDirectory '*') `
     -DestinationPath $portableArchive `
     -Force
 

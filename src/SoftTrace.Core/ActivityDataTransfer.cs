@@ -16,7 +16,9 @@ public sealed record ActivityExportItem(
     [property: JsonPropertyName("processName")] string ProcessName,
     [property: JsonPropertyName("appName")] string AppName,
     [property: JsonPropertyName("executablePath")] string? ExecutablePath,
-    [property: JsonPropertyName("source")] string Source);
+    [property: JsonPropertyName("source")] string Source,
+    [property: JsonPropertyName("windowTitle")] string? WindowTitle = null,
+    [property: JsonPropertyName("kind")] string Kind = "application");
 
 public sealed record ActivityExportPackage(
     [property: JsonPropertyName("version")] int Version,
@@ -50,7 +52,7 @@ public sealed partial class ActivityStore
 
         var query = """
             SELECT sync_id, device_id, device_name, start_utc, end_utc,
-                   process_name, app_name, executable_path, source
+                   process_name, app_name, executable_path, source, window_title, kind
             FROM activities
             WHERE ($device_id IS NULL OR device_id = $device_id)
               AND ($range_start IS NULL OR end_utc > $range_start)
@@ -85,11 +87,12 @@ public sealed partial class ActivityStore
                 processName,
                 appName,
                 executablePath,
-                source));
+                source,
+                reader.IsDBNull(9) ? null : reader.GetString(9), reader.GetString(10)));
         }
 
         var package = new ActivityExportPackage(
-            Version: 1,
+            Version: 2,
             ExportedUtc: DateTimeOffset.UtcNow,
             FilterDeviceId: deviceId,
             Activities: list);
@@ -143,10 +146,10 @@ public sealed partial class ActivityStore
         var importedCount = 0;
         long importedTicks = 0;
         long overlapTicks = 0;
-        var affectedDeviceCount = 0;
+        var affectedDeviceCount = package.Activities.Select(a => a.DeviceId).Distinct().Count();
         var writtenUtc = DateTimeOffset.UtcNow;
 
-        var groupsByDevice = package.Activities.GroupBy(a => a.DeviceId);
+        var groupsByDevice = package.Activities.GroupBy(a => (a.DeviceId, a.Kind));
         await ExecuteWriteAsync(async connection =>
         {
             using var transaction = connection.BeginTransaction();
@@ -157,11 +160,11 @@ public sealed partial class ActivityStore
                 INSERT INTO activities (
                     sync_id, device_id, device_name, start_utc, end_utc,
                     process_name, app_name, executable_path, is_open,
-                    created_utc, updated_utc, synced_utc, source
+                    created_utc, updated_utc, synced_utc, source, window_title, kind
                 ) VALUES (
                     $sync_id, $device_id, $device_name, $start_utc, $end_utc,
                     $process_name, $app_name, $executable_path, 0,
-                    $created_utc, $updated_utc, NULL, $source
+                    $created_utc, $updated_utc, NULL, $source, $window_title, $kind
                 )
                 ON CONFLICT(sync_id) DO NOTHING;
                 """;
@@ -176,11 +179,12 @@ public sealed partial class ActivityStore
             insertCommand.Parameters.AddWithValue("$created_utc", ToDatabaseTime(writtenUtc));
             insertCommand.Parameters.AddWithValue("$updated_utc", ToDatabaseTime(writtenUtc));
             insertCommand.Parameters.Add("$source", SqliteType.Text);
+            insertCommand.Parameters.Add("$window_title", SqliteType.Text);
+            insertCommand.Parameters.Add("$kind", SqliteType.Text);
 
             foreach (var group in groupsByDevice)
             {
-                var deviceId = group.Key;
-                affectedDeviceCount++;
+                var deviceId = group.Key.DeviceId;
                 var segments = group.Where(s => s.EndUtc > s.StartUtc).OrderBy(s => s.StartUtc).ToList();
                 if (segments.Count == 0)
                 {
@@ -196,7 +200,7 @@ public sealed partial class ActivityStore
                     deviceId,
                     earliestUtc,
                     latestUtc,
-                    cancellationToken);
+                    cancellationToken, group.Key.Kind);
 
                 foreach (var item in segments)
                 {
@@ -224,6 +228,8 @@ public sealed partial class ActivityStore
                         insertCommand.Parameters["$app_name"].Value = item.AppName;
                         insertCommand.Parameters["$executable_path"].Value = (object?)item.ExecutablePath ?? DBNull.Value;
                         insertCommand.Parameters["$source"].Value = string.IsNullOrWhiteSpace(item.Source) ? "import" : item.Source;
+                        insertCommand.Parameters["$window_title"].Value = (object?)item.WindowTitle ?? DBNull.Value;
+                        insertCommand.Parameters["$kind"].Value = item.Kind;
 
                         if (await insertCommand.ExecuteNonQueryAsync(cancellationToken) > 0)
                         {

@@ -1,6 +1,7 @@
 namespace SoftTrace.Core;
 
-public sealed record AppIdentity(string ProcessName, string AppName, string? ExecutablePath)
+public sealed record AppIdentity(string ProcessName, string AppName, string? ExecutablePath,
+    string? WindowTitle = null, string Kind = "application")
 {
     public string StableKey => string.IsNullOrWhiteSpace(ExecutablePath)
         ? ProcessName.ToUpperInvariant()
@@ -35,7 +36,9 @@ public sealed record SyncActivity(
     DateTimeOffset UpdatedUtc,
     bool IsOpen,
     string Source,
-    DateTimeOffset? ServerUpdatedUtc = null);
+    DateTimeOffset? ServerUpdatedUtc = null,
+    string? WindowTitle = null,
+    string Kind = "application");
 
 public sealed record SyncMarker(string SyncId, DateTimeOffset UpdatedUtc);
 

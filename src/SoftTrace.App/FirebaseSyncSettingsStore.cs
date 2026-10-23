@@ -5,6 +5,9 @@ using System.Text.Json;
 
 namespace SoftTrace.App;
 
+public sealed class FirebaseReauthorizationRequiredException(Exception inner)
+    : InvalidOperationException("Windows 无法解密原登录凭据。请点击“重新授权”，继续使用当前 Google 账号；本地记录和设置会保留。", inner);
+
 public sealed record FirebaseSyncSettings(
     bool Enabled,
     string? Email,
@@ -65,8 +68,16 @@ public sealed class FirebaseSyncSettingsStore(string settingsPath)
 
     public static string UnprotectRefreshToken(string protectedRefreshToken)
     {
-        var protectedBytes = Convert.FromBase64String(protectedRefreshToken);
-        var plaintext = ProtectedData.Unprotect(protectedBytes, null, DataProtectionScope.CurrentUser);
-        return Encoding.UTF8.GetString(plaintext);
+        try
+        {
+            var protectedBytes = Convert.FromBase64String(protectedRefreshToken);
+            var plaintext = ProtectedData.Unprotect(protectedBytes, null, DataProtectionScope.CurrentUser);
+            try { return Encoding.UTF8.GetString(plaintext); }
+            finally { CryptographicOperations.ZeroMemory(plaintext); }
+        }
+        catch (Exception exception) when (exception is CryptographicException or FormatException)
+        {
+            throw new FirebaseReauthorizationRequiredException(exception);
+        }
     }
 }

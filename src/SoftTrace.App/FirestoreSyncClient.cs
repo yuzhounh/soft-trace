@@ -41,11 +41,20 @@ public sealed partial class FirestoreSyncClient(HttpClient httpClient)
                     ? new JsonObject { ["nullValue"] = "NULL_VALUE" }
                     : StringValue(activity.ExecutablePath),
                 ["startUtc"] = TimestampValue(activity.StartUtc),
-                ["endUtc"] = TimestampValue(activity.EndUtc),
+                // Older clients only know software intervals. State documents have zero legacy
+                // duration so they cannot inflate those clients' software rankings.
+                ["endUtc"] = TimestampValue(activity.Kind == "application" ? activity.EndUtc : activity.StartUtc),
                 ["updatedUtc"] = TimestampValue(activity.UpdatedUtc),
                 ["isOpen"] = BooleanValue(activity.IsOpen),
-                ["source"] = StringValue(activity.Source)
+                ["source"] = StringValue(activity.Source),
+                ["windowTitle"] = StringValue(activity.WindowTitle ?? string.Empty),
+                ["kind"] = StringValue(activity.Kind)
             };
+            if (activity.Kind != "application")
+            {
+                fields["stateStartUtc"] = TimestampValue(activity.StartUtc);
+                fields["stateEndUtc"] = TimestampValue(activity.EndUtc);
+            }
             var documentName =
                 $"projects/{projectId}/databases/(default)/documents/users/{userId}/activities/{activity.SyncId}";
             writes.Add(new JsonObject
@@ -131,6 +140,7 @@ public sealed partial class FirestoreSyncClient(HttpClient httpClient)
 
             var documentName = firestoreDocument.GetProperty("name").GetString()!;
             var serverUpdatedUtc = GetTimestamp(fields, "serverUpdatedUtc");
+            var kind = GetNullableString(fields, "kind") ?? "application";
             activities.Add(new SyncActivity(
                 GetString(fields, "syncId"),
                 GetString(fields, "deviceId"),
@@ -138,12 +148,14 @@ public sealed partial class FirestoreSyncClient(HttpClient httpClient)
                 GetString(fields, "processName"),
                 GetString(fields, "appName"),
                 GetNullableString(fields, "executablePath"),
-                GetTimestamp(fields, "startUtc"),
-                GetTimestamp(fields, "endUtc"),
+                GetTimestamp(fields, kind != "application" && fields.TryGetProperty("stateStartUtc", out _) ? "stateStartUtc" : "startUtc"),
+                GetTimestamp(fields, kind != "application" && fields.TryGetProperty("stateEndUtc", out _) ? "stateEndUtc" : "endUtc"),
                 GetTimestamp(fields, "updatedUtc"),
                 GetBoolean(fields, "isOpen"),
                 GetString(fields, "source"),
-                serverUpdatedUtc));
+                serverUpdatedUtc,
+                GetNullableString(fields, "windowTitle"),
+                kind));
             nextCursor = new SyncPullCursor(serverUpdatedUtc, documentName);
         }
 
