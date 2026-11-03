@@ -4,6 +4,8 @@
 
 <h1 align="center">Soft Trace</h1>
 
+<p align="center">简体中文 · <a href="README.en.md">English</a></p>
+
 <p align="center"><strong>本地记录软件使用时间，清晰查看每日排行与使用习惯。</strong></p>
 
 <p align="center">
